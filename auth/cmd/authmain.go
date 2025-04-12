@@ -5,6 +5,7 @@ import (
 	"auth/internal/database"
 	"auth/internal/router"
 	"context"
+	"sync"
 
 	"github.com/bytedance/sonic"
 	"github.com/gofiber/fiber/v2"
@@ -32,4 +33,7 @@ func main() {
 	router.SetupRoutes(app)
 
 	app.Listen(":" + string(config.Env.Port))
+
+	mu := sync.RWMutex{}
+	mu.Rlo
 }
