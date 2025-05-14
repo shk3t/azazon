@@ -1,3 +1,3 @@
-# Yotion
+# Azazon
 
-Здесь должен был быть аналог Notion, но что-то пошло не так, теперь это просто Template-проект на Fiber с авторизацией.
+Yet another E-Commerce ordering system like Amazon/Ozon/...
