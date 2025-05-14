@@ -5,11 +5,7 @@ import (
 	"auth/internal/database"
 	"auth/internal/router"
 	"context"
-	"sync"
 
-	"github.com/bytedance/sonic"
-	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -22,18 +18,15 @@ func main() {
 	database.Connect(ctx)
 	defer database.ConnPool.Close()
 
-	app := fiber.New(fiber.Config{
-		Prefork:     false,
-		JSONEncoder: sonic.Marshal,
-		JSONDecoder: sonic.Unmarshal,
-	})
+	// app := fiber.New(fiber.Config{
+	// 	Prefork:     false,
+	// 	JSONEncoder: sonic.Marshal,
+	// 	JSONDecoder: sonic.Unmarshal,
+	// })
+	//
+	// app.Use(logger.New())
 
-	app.Use(logger.New())
+	router.SetupRoutes()
 
-	router.SetupRoutes(app)
-
-	app.Listen(":" + string(config.Env.Port))
-
-	mu := sync.RWMutex{}
-	mu.Rlo
+	// app.Listen(":" + string(config.Env.Port))
 }

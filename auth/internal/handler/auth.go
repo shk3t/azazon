@@ -2,12 +2,13 @@ package handler
 
 import (
 	"auth/internal/config"
+	m "auth/internal/model"
+	q "auth/internal/query"
 	"context"
-	q "goto/src/database/query"
-	m "goto/src/model"
+	"encoding/json"
+	"net/http"
 	"time"
 
-	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -33,65 +34,81 @@ func getJwtToken(user *m.User) (string, error) {
 	return encodedToken, err
 }
 
-func Register(fctx *fiber.Ctx) error {
+func Register(w http.ResponseWriter, r *http.Request) {
 	ctx := context.Background()
 	body := m.User{}
-	if err := fctx.BodyParser(&body); err != nil {
-		return err
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
 	}
 
 	if body.Login == "" || body.Password == "" {
-		return fctx.Status(fiber.StatusBadRequest).
-			SendString("Login and password must be provided")
+		http.Error(w, "Login and password must be provided", http.StatusBadRequest)
+		return
 	}
 	if len(body.Password) < 8 {
-		return fctx.Status(fiber.StatusBadRequest).SendString("Password is too short")
+		http.Error(w, "Password is too short", http.StatusBadRequest)
+		return
 	}
 	if q.IsLoginInUse(ctx, body.Login) {
-		return fctx.Status(fiber.StatusBadRequest).SendString("Login is already in use")
+		http.Error(w, "Login is already in use", http.StatusBadRequest)
+		return
 	}
 
 	passwordHash, err := hashPassword(body.Password)
 	if err != nil {
-		return fctx.SendStatus(fiber.StatusInternalServerError)
+		http.Error(w, "", http.StatusInternalServerError)
+		return
 	}
 
 	user := &m.User{Login: body.Login, Password: passwordHash}
 	user, err = q.CreateUser(ctx, user)
 	if err != nil {
-		return fctx.Status(fiber.StatusBadRequest).SendString(err.Error())
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
 	}
 
 	encodedToken, err := getJwtToken(user)
 	if err != nil {
-		return fctx.SendStatus(fiber.StatusInternalServerError)
+		http.Error(w, "", http.StatusInternalServerError)
+		return
 	}
-	return fctx.JSON(fiber.Map{"user": user, "token": encodedToken})
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]any{"user": user, "token": encodedToken})
 }
 
-func Login(fctx *fiber.Ctx) error {
+func Login(w http.ResponseWriter, r *http.Request) {
 	ctx := context.Background()
 	body := m.User{}
-	if err := fctx.BodyParser(&body); err != nil {
-		return err
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
 	}
 
 	if body.Login == "" || body.Password == "" {
-		return fctx.Status(fiber.StatusBadRequest).
-			SendString("Login and password must be provided")
+		http.Error(w, "Login and password must be provided", http.StatusBadRequest)
+		return
 	}
 
 	user, err := q.GetUserByLogin(ctx, body.Login)
 	if err != nil {
-		return fctx.Status(fiber.StatusUnauthorized).SendString("Login or password is not valid")
+		http.Error(w, "Login or password is not valid", http.StatusUnauthorized)
+		return
 	}
 	if valid := checkPasswordHash(body.Password, user.Password); !valid {
-		return fctx.Status(fiber.StatusUnauthorized).SendString("Login or password is not valid")
+		http.Error(w, "Login or password is not valid", http.StatusUnauthorized)
+		return
 	}
 
 	encodedToken, err := getJwtToken(user)
 	if err != nil {
-		return fctx.SendStatus(fiber.StatusInternalServerError)
+		http.Error(w, "", http.StatusInternalServerError)
+		return
 	}
-	return fctx.JSON(fiber.Map{"user": user, "token": encodedToken})
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]any{"user": user, "token": encodedToken})
 }

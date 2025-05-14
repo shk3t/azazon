@@ -1,7 +1,7 @@
 package config
 
 import (
-	force "auth/internal/utils"
+	"auth/pkg/sugar"
 	"os"
 
 	"strconv"
@@ -31,12 +31,12 @@ func LoadEnvs() {
 	}
 
 	Env = envConfig{
-		Port: force.Default(strconv.Atoi(os.Getenv("PORT"))),
+		Port: sugar.Default(strconv.Atoi(os.Getenv("PORT"))),
 		Db: dbConfig{
 			User:     os.Getenv("DB_USER"),
 			Password: os.Getenv("DB_PASSWORD"),
 			Host:     os.Getenv("DB_HOST"),
-			Port:     force.Default(strconv.Atoi(os.Getenv("DB_PORT"))),
+			Port:     sugar.Default(strconv.Atoi(os.Getenv("DB_PORT"))),
 			Name:     os.Getenv("DB_NAME"),
 		},
 		SecretKey: os.Getenv("SECRET_KEY"),
