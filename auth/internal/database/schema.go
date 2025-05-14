@@ -7,7 +7,7 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-var TABLE_DEFINITIONS = [...]string{
+var tableDefinitions = [...]string{
 	`
     CREATE TABLE IF NOT EXISTS "user" (
         id SERIAL PRIMARY KEY,
@@ -20,7 +20,7 @@ func InitSchema(ctx context.Context) {
 	tx, _ := ConnPool.BeginTx(ctx, pgx.TxOptions{})
 	defer tx.Rollback(ctx)
 
-	for _, tableDef := range TABLE_DEFINITIONS {
+	for _, tableDef := range tableDefinitions {
 		_, err := tx.Exec(ctx, tableDef)
 		if err != nil {
 			panic("Schema initiation failed: " + err.Error())

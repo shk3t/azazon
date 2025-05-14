@@ -5,6 +5,8 @@ import (
 	"auth/internal/database"
 	"auth/internal/router"
 	"context"
+	"net/http"
+	"strconv"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -12,21 +14,16 @@ import (
 var dbPool *pgxpool.Pool
 
 func main() {
+	ctx := context.Background()
+
 	config.LoadEnvs()
 
-	ctx := context.Background()
 	database.Connect(ctx)
 	defer database.ConnPool.Close()
 
-	// app := fiber.New(fiber.Config{
-	// 	Prefork:     false,
-	// 	JSONEncoder: sonic.Marshal,
-	// 	JSONDecoder: sonic.Unmarshal,
-	// })
-	//
-	// app.Use(logger.New())
+	mux := http.NewServeMux()
+	router.SetupRoutes(mux)
+	router.SetupMiddlewares(mux)
 
-	router.SetupRoutes()
-
-	// app.Listen(":" + string(config.Env.Port))
+	http.ListenAndServe(":"+strconv.Itoa(config.Env.Port), mux)
 }

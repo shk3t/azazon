@@ -1,11 +1,16 @@
 package router
 
 import (
-	"net/http"
 	"auth/internal/handler"
+	"auth/internal/middleware"
+	"net/http"
 )
 
-func SetupRoutes() {
-	http.HandleFunc("POST /register", handler.Register)
-	http.HandleFunc("POST /login", handler.Login)
+func SetupRoutes(mux *http.ServeMux) {
+	mux.HandleFunc("POST /register", handler.Register)
+	mux.HandleFunc("POST /login", handler.Login)
+}
+
+func SetupMiddlewares(mux *http.ServeMux) {
+	middleware.LoggingMiddleware(mux)  // TODO
 }
