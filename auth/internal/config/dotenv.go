@@ -2,6 +2,7 @@ package config
 
 import (
 	"auth/pkg/sugar"
+	"errors"
 	"fmt"
 	"os"
 
@@ -12,9 +13,9 @@ import (
 
 var Env envConfig
 
-func LoadEnvs() {
+func LoadEnvs() error {
 	if err := godotenv.Load("../.env"); err != nil {
-		panic("Error loading .env file")
+		return errors.New("Error loading .env file")
 	}
 
 	Env = envConfig{
@@ -28,9 +29,10 @@ func LoadEnvs() {
 		},
 		SecretKey: getenv("SECRET_KEY"),
 	}
+	return nil
 }
 
-const serviceName = "AUTH_"
+const serviceName = "AUTH"
 
 type dbConfig struct {
 	User     string

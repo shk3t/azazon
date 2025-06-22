@@ -5,3 +5,8 @@ type User struct {
 	Login    string
 	Password string
 }
+
+type AuthResponse struct {
+	User  *User
+	Token string
+}

@@ -3,6 +3,7 @@
 .idea/
 pyrightconfig.json
 diploma/
+todo.md
 
 # Private data
 .env

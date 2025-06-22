@@ -76,7 +76,7 @@ func Register(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(map[string]any{"user": user, "token": encodedToken})
+	json.NewEncoder(w).Encode(m.AuthResponse{User: user, Token: encodedToken})
 }
 
 func Login(w http.ResponseWriter, r *http.Request) {
@@ -110,5 +110,5 @@ func Login(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(map[string]any{"user": user, "token": encodedToken})
+	json.NewEncoder(w).Encode(m.AuthResponse{User: user, Token: encodedToken})
 }

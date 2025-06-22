@@ -5,6 +5,7 @@ import (
 	"auth/internal/database"
 	"auth/internal/router"
 	"context"
+	"log"
 	"net/http"
 	"strconv"
 
@@ -16,7 +17,9 @@ var dbPool *pgxpool.Pool
 func main() {
 	ctx := context.Background()
 
-	config.LoadEnvs()
+	if err := config.LoadEnvs(); err != nil {
+		panic(err)
+	}
 
 	database.Connect(ctx)
 	defer database.ConnPool.Close()
@@ -25,5 +28,6 @@ func main() {
 	router.SetupRoutes(mux)
 	router.SetupMiddlewares(mux)
 
+	log.Printf("Server is running on port %d\n", config.Env.Port)
 	http.ListenAndServe(":"+strconv.Itoa(config.Env.Port), mux)
 }
