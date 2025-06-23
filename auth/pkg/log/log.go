@@ -7,7 +7,16 @@ import (
 	"path/filepath"
 )
 
-var TestLogger *log.Logger
+var Loggers = struct {
+	Request *log.Logger
+	Test    *log.Logger
+}{}
+
+var allLoggers = map[string]**log.Logger{
+	"request.log": &Loggers.Request,
+	"test.log":    &Loggers.Test,
+}
+
 var TLog func(...any)
 
 func Init(workDir string) {
@@ -17,26 +26,35 @@ func Init(workDir string) {
 		panic("Can't create \"logs\" directory")
 	}
 
-	testLogFile, err := os.OpenFile(
-		filepath.Join(logDir, "test.log"),
-		os.O_APPEND|os.O_CREATE|os.O_WRONLY,
-		0644,
-	)
-	if err != nil {
-		panic("Can't open \"test.log\" file")
+	for fileName, loggerPtr := range allLoggers {
+		logFile, err := os.OpenFile(
+			filepath.Join(logDir, fileName),
+			os.O_APPEND|os.O_CREATE|os.O_WRONLY,
+			0644,
+		)
+		if err != nil {
+			panic("Can't open \"test.log\" file")
+		}
+
+		*loggerPtr = log.New(logFile, "", log.LstdFlags|log.Lshortfile)
 	}
 
-	TestLogger = log.New(testLogFile, "", log.LstdFlags|log.Lshortfile)
-	TLog = TestLogger.Println
+	TLog = Loggers.Test.Println
 }
 
 func Deinit() {
-	writer := TestLogger.Writer()
-	writeCloser, ok := writer.(io.WriteCloser)
-	if ok {
-		err := writeCloser.Close()
-		if err != nil {
-			panic("Can't close log file")
+	for _, loggerPtr := range allLoggers {
+		if loggerPtr == nil {
+			continue
+		}
+
+		writer := (*loggerPtr).Writer()
+		writeCloser, ok := writer.(io.WriteCloser)
+		if ok {
+			err := writeCloser.Close()
+			if err != nil {
+				panic("Can't close log file")
+			}
 		}
 	}
 }
