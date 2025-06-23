@@ -3,44 +3,44 @@ package authtest
 import (
 	"auth/internal/config"
 	m "auth/internal/model"
+	"auth/pkg/log"
+	"auth/pkg/setup"
 	"auth/pkg/sugar"
 	"bytes"
-	"context"
 	"encoding/json"
 	"fmt"
-	"io"
-	"log"
 	"net/http"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"testing"
-	"time"
 )
 
-var cmd *exec.Cmd
 var baseUrl string
 
 func TestMain(m *testing.M) {
-	initLogger()
-	defer deiniLogger()
-
+	workDir := filepath.Dir(sugar.Default(os.Getwd()))
 	os.Setenv(config.ServiceName+"_TEST", "true")
+	os.Setenv(config.ServiceName+"_PORT", "17071")
+
+	log.Init(workDir)
+	defer log.Deinit()
+
 	if err := config.LoadEnvs("../../.env"); err != nil {
-		dLog(err)
+		log.TLog(err)
 		os.Exit(1)
 	}
 	baseUrl = fmt.Sprintf("http://localhost:%d", config.Env.Port)
 
-	if err := serverUp(); err != nil {
-		dLog(err)
+	cmd, err := setup.ServerUp(workDir, baseUrl, log.TLog)
+	if err != nil {
+		log.TLog(err)
 		os.Exit(1)
 	}
-	defer serverDown()
+	defer setup.ServerDown(cmd, log.TLog)
 
-	dLog("Running tests...")
+	log.TLog("Running tests...")
 	exitCode := m.Run()
-	dLog("Tests running finished with exit code:", exitCode)
+	log.TLog("Tests running finished with exit code:", exitCode)
 }
 
 func TestRegister(t *testing.T) {
@@ -84,106 +84,6 @@ func TestRegister(t *testing.T) {
 				body.Login,
 				testCase.response.User.Login,
 			)
-		}
-	}
-}
-
-func serverUp() error {
-	workDir := filepath.Dir(sugar.Default(os.Getwd()))
-	dLog(fmt.Sprintf("Starting server in `%s` dir...", workDir))
-
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	cmd = exec.CommandContext(ctx, "go", "build", "-o", "build/auth", "cmd/authmain.go")
-	cmd.Dir = workDir
-	if err := cmd.Start(); err != nil {
-		return fmt.Errorf("Failed to start server building: %w", err)
-	}
-	if err := cmd.Wait(); err != nil {
-		return fmt.Errorf("Failed to build server: %w", err)
-	}
-
-	cmd = exec.Command("./build/auth")
-	cmd.Dir = workDir
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-
-	if err := cmd.Start(); err != nil {
-		return fmt.Errorf("Failed to start server: %w", err)
-	}
-
-	if err := waitForServerReady(baseUrl, 5*time.Second); err != nil {
-		return err
-	}
-
-	dLog("Server started successfully")
-	return nil
-}
-
-func waitForServerReady(url string, timeout time.Duration) error {
-	start := time.Now()
-	for time.Since(start) < timeout {
-		if _, err := http.Get(url); err == nil {
-			return nil
-		}
-		time.Sleep(500 * time.Millisecond)
-	}
-	return fmt.Errorf("Server not ready after %s", timeout)
-}
-
-func serverDown() {
-	if cmd == nil || cmd.Process == nil {
-		dLog("Error: Process is nil")
-		return
-	}
-
-	dLog("Stopping server...")
-	dLog(cmd.Args)
-
-	if err := cmd.Process.Signal(os.Interrupt); err != nil {
-		fmt.Printf("Error sending interrupt: %v\n", err)
-	}
-
-	done := make(chan error, 1)
-	go func() { done <- cmd.Wait() }()
-
-	select {
-	case err := <-done:
-		if err != nil {
-			dLog(fmt.Sprintf("Server stopped: %v\n", err))
-		} else {
-			dLog("Server stopped gracefully")
-		}
-	case <-time.After(5 * time.Second):
-		cmd.Process.Kill()
-		dLog("Server force killed after timeout")
-	}
-}
-
-var DebugLogger *log.Logger
-var dLog func(...any)
-
-func initLogger() {
-	err := os.MkdirAll("../logs", 0755)
-	if err != nil {
-		panic("Can't create \"logs\" directory")
-	}
-	debugLogFile, err := os.OpenFile("../logs/debug.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		panic("Can't open \"debug.log\" file")
-	}
-
-	DebugLogger = log.New(debugLogFile, "", log.LstdFlags|log.Lshortfile)
-	dLog = DebugLogger.Println
-}
-
-func deiniLogger() {
-	writer := DebugLogger.Writer()
-	writeCloser, ok := writer.(io.WriteCloser)
-	if ok {
-		err := writeCloser.Close()
-		if err != nil {
-			panic("Can't close log file")
 		}
 	}
 }
