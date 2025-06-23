@@ -72,16 +72,16 @@ func TestRegister(t *testing.T) {
 			continue
 		}
 
-		body := m.User{}
+		body := m.AuthResponse{}
 		err = json.NewDecoder(resp.Body).Decode(&body)
 		if err != nil {
 			t.Error(err)
 		}
 
-		if body.Login != testCase.response.User.Login {
+		if body.User.Login != testCase.response.User.Login {
 			t.Errorf(
 				"Unexpected user login: %s\nExpected: %s",
-				body.Login,
+				body.User.Login,
 				testCase.response.User.Login,
 			)
 		}

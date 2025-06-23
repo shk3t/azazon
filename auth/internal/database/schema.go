@@ -22,8 +22,8 @@ func InitSchema(ctx context.Context) {
 	defer tx.Rollback(ctx)
 
 	if config.Env.Test {
-		tx.Exec(ctx, "DROP SCHEMA IF EXISTS pubilc CASCADE")
-		tx.Exec(ctx, "CREATE SCHEMA pubilc")
+		tx.Exec(ctx, "DROP SCHEMA IF EXISTS public CASCADE")
+		tx.Exec(ctx, "CREATE SCHEMA public")
 	}
 
 	for _, tableDef := range tableDefinitions {
