@@ -1,6 +1,7 @@
 package database
 
 import (
+	"auth/internal/config"
 	"context"
 	"log"
 
@@ -19,6 +20,11 @@ var tableDefinitions = [...]string{
 func InitSchema(ctx context.Context) {
 	tx, _ := ConnPool.BeginTx(ctx, pgx.TxOptions{})
 	defer tx.Rollback(ctx)
+
+	if config.Env.Test {
+		tx.Exec(ctx, "DROP SCHEMA IF EXISTS pubilc CASCADE")
+		tx.Exec(ctx, "CREATE SCHEMA pubilc")
+	}
 
 	for _, tableDef := range tableDefinitions {
 		_, err := tx.Exec(ctx, tableDef)

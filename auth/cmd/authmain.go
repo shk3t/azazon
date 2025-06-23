@@ -17,7 +17,7 @@ var dbPool *pgxpool.Pool
 func main() {
 	ctx := context.Background()
 
-	if err := config.LoadEnvs(); err != nil {
+	if err := config.LoadEnvs("../.env"); err != nil {
 		panic(err)
 	}
 
@@ -29,5 +29,8 @@ func main() {
 	router.SetupMiddlewares(mux)
 
 	log.Printf("Server is running on port %d\n", config.Env.Port)
-	http.ListenAndServe(":"+strconv.Itoa(config.Env.Port), mux)
+	err := http.ListenAndServe(":"+strconv.Itoa(config.Env.Port), mux)
+	if err != nil {
+		panic(err)
+	}
 }

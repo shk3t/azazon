@@ -7,6 +7,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
+	"log"
 	"net/http"
 	"os"
 	"os/exec"
@@ -18,24 +20,27 @@ var cmd *exec.Cmd
 var baseUrl string
 
 func TestMain(m *testing.M) {
-	if err := serverUp(); err != nil {
-		fmt.Println(err)
+	initLogger()
+	defer deiniLogger()
+
+	os.Setenv(config.ServiceName+"_TEST", "true")
+	if err := config.LoadEnvs("../../.env"); err != nil {
+		dLog(err)
 		os.Exit(1)
 	}
-
-	defer serverDown()
-
-	if err := config.LoadEnvs(); err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-
 	baseUrl = fmt.Sprintf("http://localhost:%d", config.Env.Port)
 
-	// exitCode := m.Run()
-	fmt.Println("IT WORKS!")
+	if err := serverUp(); err != nil {
+		dLog(err)
+		os.Exit(1)
+	}
+	defer serverDown()
 
-	// os.Exit(exitCode)
+	dLog("Running tests...")
+	exitCode := m.Run()
+	dLog("Tests running finished with exit code:", exitCode)
+	os.Exit(exitCode)
+	dLog("Exit")
 }
 
 func TestRegister(t *testing.T) {
@@ -84,11 +89,11 @@ func TestRegister(t *testing.T) {
 }
 
 func serverUp() error {
-	fmt.Println("Starting server...")
+	dLog("Starting server...")
 	ctx := context.Background()
 
-	cmd = exec.CommandContext(ctx, "bash", "-c", "go run cmd/authmain.go")
-
+	cmd = exec.CommandContext(ctx, "go", "run", "cmd/authmain.go")
+	cmd.Dir = "/home/shket/projects/go/azazon/auth"
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
@@ -100,7 +105,7 @@ func serverUp() error {
 		return err
 	}
 
-	fmt.Println("Server started")
+	dLog("Server started")
 	return nil
 }
 
@@ -117,10 +122,11 @@ func waitForServerReady(url string, timeout time.Duration) error {
 
 func serverDown() {
 	if cmd == nil || cmd.Process == nil {
+		dLog("Error: Process is nil")
 		return
 	}
 
-	fmt.Println("Stopping server...")
+	dLog("Stopping server...")
 
 	if err := cmd.Process.Signal(os.Interrupt); err != nil {
 		fmt.Printf("Error sending interrupt: %v\n", err)
@@ -132,12 +138,40 @@ func serverDown() {
 	select {
 	case err := <-done:
 		if err != nil {
-			fmt.Printf("Server stopped with error: %v\n", err)
+			dLog(fmt.Sprintf("Server stopped with error: %v\n", err))
 		} else {
-			fmt.Println("Server stopped gracefully")
+			dLog("Server stopped gracefully")
 		}
 	case <-time.After(5 * time.Second):
-		fmt.Println("Force killing server after timeout")
 		cmd.Process.Kill()
+		dLog("Server force killed after timeout")
+	}
+}
+
+var DebugLogger *log.Logger
+var dLog func(...any)
+
+func initLogger() {
+	err := os.MkdirAll("../logs", 0755)
+	if err != nil {
+		panic("Can't create \"logs\" directory")
+	}
+	debugLogFile, err := os.OpenFile("../logs/debug.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		panic("Can't open \"debug.log\" file")
+	}
+
+	DebugLogger = log.New(debugLogFile, "", log.LstdFlags|log.Lshortfile)
+	dLog = DebugLogger.Println
+}
+
+func deiniLogger() {
+	writer := DebugLogger.Writer()
+	writeCloser, ok := writer.(io.WriteCloser)
+	if ok {
+		err := writeCloser.Close()
+		if err != nil {
+			panic("Can't close log file")
+		}
 	}
 }
