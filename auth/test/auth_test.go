@@ -3,6 +3,7 @@ package authtest
 import (
 	"auth/internal/config"
 	m "auth/internal/model"
+	"auth/pkg/sugar"
 	"bytes"
 	"context"
 	"encoding/json"
@@ -12,6 +13,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"testing"
 	"time"
 )
@@ -39,8 +41,6 @@ func TestMain(m *testing.M) {
 	dLog("Running tests...")
 	exitCode := m.Run()
 	dLog("Tests running finished with exit code:", exitCode)
-	// os.Exit(exitCode)
-	dLog("Exit")
 }
 
 func TestRegister(t *testing.T) {
@@ -89,11 +89,22 @@ func TestRegister(t *testing.T) {
 }
 
 func serverUp() error {
-	dLog("Starting server...")
-	ctx := context.Background()
+	workDir := filepath.Dir(sugar.Default(os.Getwd()))
+	dLog(fmt.Sprintf("Starting server in `%s` dir...", workDir))
 
-	cmd = exec.CommandContext(ctx, "go", "run", "cmd/authmain.go")
-	cmd.Dir = "/home/shket/projects/go/azazon/auth"
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	cmd = exec.CommandContext(ctx, "go", "build", "-o", "build/auth", "cmd/authmain.go")
+	cmd.Dir = workDir
+	if err := cmd.Start(); err != nil {
+		return fmt.Errorf("Failed to start server building: %w", err)
+	}
+	if err := cmd.Wait(); err != nil {
+		return fmt.Errorf("Failed to build server: %w", err)
+	}
+
+	cmd = exec.Command("./build/auth")
+	cmd.Dir = workDir
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
@@ -105,7 +116,7 @@ func serverUp() error {
 		return err
 	}
 
-	dLog("Server started")
+	dLog("Server started successfully")
 	return nil
 }
 
@@ -127,6 +138,7 @@ func serverDown() {
 	}
 
 	dLog("Stopping server...")
+	dLog(cmd.Args)
 
 	if err := cmd.Process.Signal(os.Interrupt); err != nil {
 		fmt.Printf("Error sending interrupt: %v\n", err)
@@ -138,7 +150,7 @@ func serverDown() {
 	select {
 	case err := <-done:
 		if err != nil {
-			dLog(fmt.Sprintf("Server stopped with error: %v\n", err))
+			dLog(fmt.Sprintf("Server stopped: %v\n", err))
 		} else {
 			dLog("Server stopped gracefully")
 		}
