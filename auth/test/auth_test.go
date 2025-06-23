@@ -39,7 +39,7 @@ func TestMain(m *testing.M) {
 	dLog("Running tests...")
 	exitCode := m.Run()
 	dLog("Tests running finished with exit code:", exitCode)
-	os.Exit(exitCode)
+	// os.Exit(exitCode)
 	dLog("Exit")
 }
 
