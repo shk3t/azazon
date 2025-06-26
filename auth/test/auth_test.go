@@ -1,10 +1,10 @@
 package authtest
 
 import (
-	"auth/internal/config"
 	m "auth/internal/model"
+	"auth/internal/setup"
 	"auth/pkg/log"
-	"auth/pkg/setup"
+	setuppkg "auth/pkg/setup"
 	"auth/pkg/sugar"
 	"bytes"
 	"encoding/json"
@@ -19,35 +19,37 @@ var baseUrl string
 
 func TestMain(m *testing.M) {
 	workDir := filepath.Dir(sugar.Default(os.Getwd()))
-	os.Setenv(config.ServiceName+"_TEST", "true")
-	os.Setenv(config.ServiceName+"_PORT", "17071")
+	os.Setenv(setup.ServiceName+"_TEST", "true")
+	os.Setenv(setup.ServiceName+"_PORT", "17071")
 
-	log.Init(workDir)
-	defer log.Deinit()
-
-	if err := config.LoadEnvs("../../.env"); err != nil {
-		log.TLog(err)
-		os.Exit(1)
-	}
-	baseUrl = fmt.Sprintf("http://localhost:%d", config.Env.Port)
-
-	cmd, err := setup.ServerUp(workDir, baseUrl, log.TLog)
+	err := setup.InitAll("../../.env", workDir)
 	if err != nil {
-		log.TLog(err)
-		os.Exit(1)
+		if log.TLog != nil {
+			log.TLog(err)
+		}
+		setup.GracefullExit(1)
 	}
-	defer setup.ServerDown(cmd, log.TLog)
+
+	baseUrl = fmt.Sprintf("http://localhost:%d", setup.Env.Port)
+	cmd, err := setuppkg.ServerUp(workDir, baseUrl, log.TLog)
+	if err != nil {
+		setuppkg.ServerDown(cmd, log.TLog)
+		log.TLog(err)
+		setup.GracefullExit(1)
+	}
 
 	log.TLog("Running tests...")
 	exitCode := m.Run()
-	log.TLog("Tests running finished with exit code:", exitCode)
+	log.TLog("Test run finished")
+	setuppkg.ServerDown(cmd, log.TLog)
+	setup.GracefullExit(exitCode)
 }
 
 func TestRegister(t *testing.T) {
 	for _, testCase := range registerTestCases {
 		jsonData, err := json.Marshal(testCase.payload)
 		if err != nil {
-			t.Error(err)
+			t.Fatal(err)
 		}
 
 		resp, err := http.Post(
@@ -56,12 +58,12 @@ func TestRegister(t *testing.T) {
 			bytes.NewBuffer(jsonData),
 		)
 		if err != nil {
-			t.Error(err)
+			t.Fatal(err)
 		}
 		defer resp.Body.Close()
 
 		if resp.StatusCode != testCase.statusCode {
-			t.Errorf(
+			t.Fatalf(
 				"Unexpected statusCode: %d\nExpected: %d",
 				resp.StatusCode,
 				testCase.statusCode,
@@ -75,11 +77,11 @@ func TestRegister(t *testing.T) {
 		body := m.AuthResponse{}
 		err = json.NewDecoder(resp.Body).Decode(&body)
 		if err != nil {
-			t.Error(err)
+			t.Fatal(err)
 		}
 
 		if body.User.Login != testCase.response.User.Login {
-			t.Errorf(
+			t.Fatalf(
 				"Unexpected user login: %s\nExpected: %s",
 				body.User.Login,
 				testCase.response.User.Login,

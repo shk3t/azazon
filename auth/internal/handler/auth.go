@@ -1,9 +1,9 @@
 package handler
 
 import (
-	"auth/internal/config"
 	m "auth/internal/model"
 	q "auth/internal/query"
+	"auth/internal/setup"
 	"context"
 	"encoding/json"
 	"net/http"
@@ -30,7 +30,7 @@ func getJwtToken(user *m.User) (string, error) {
 		"exp":   time.Now().Add(24 * 30 * time.Hour).Unix(),
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	encodedToken, err := token.SignedString([]byte(config.Env.SecretKey))
+	encodedToken, err := token.SignedString([]byte(setup.Env.SecretKey))
 	return encodedToken, err
 }
 

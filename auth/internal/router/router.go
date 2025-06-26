@@ -5,11 +5,10 @@ import (
 	"net/http"
 )
 
-func SetupRoutes(mux *http.ServeMux) {
+func SetupRoutes(mux *http.ServeMux) *http.ServeMux {
 	mux.HandleFunc("POST /auth/register", handler.Register)
 	mux.HandleFunc("POST /auth/login", handler.Login)
-}
 
-func SetupMiddlewares(mux *http.ServeMux) {
-	// middleware.LoggingMiddleware(mux)  // TODO
+	return mux
+	// return middleware.SetupMiddlewares(mux, middleware.LoggingMiddleware).(*http.ServeMux)
 }

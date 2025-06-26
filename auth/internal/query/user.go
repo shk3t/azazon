@@ -1,9 +1,9 @@
 package query
 
 import (
-	"context"
-	db "auth/internal/database"
 	m "auth/internal/model"
+	db "auth/internal/setup"
+	"context"
 )
 
 const userBaseSelectQuery = "SELECT * FROM \"user\" "

@@ -1,8 +1,8 @@
-package database
+package setup
 
 import (
-	"auth/internal/config"
 	"context"
+	"fmt"
 	"log"
 
 	"github.com/jackc/pgx/v5"
@@ -17,11 +17,11 @@ var tableDefinitions = [...]string{
     )`,
 }
 
-func InitSchema(ctx context.Context) {
+func InitDatabaseSchema(ctx context.Context) error {
 	tx, _ := ConnPool.BeginTx(ctx, pgx.TxOptions{})
 	defer tx.Rollback(ctx)
 
-	if config.Env.Test {
+	if Env.Test {
 		tx.Exec(ctx, "DROP SCHEMA IF EXISTS public CASCADE")
 		tx.Exec(ctx, "CREATE SCHEMA public")
 	}
@@ -29,10 +29,11 @@ func InitSchema(ctx context.Context) {
 	for _, tableDef := range tableDefinitions {
 		_, err := tx.Exec(ctx, tableDef)
 		if err != nil {
-			panic("Schema initiation failed: " + err.Error())
+			return fmt.Errorf("Schema initiation failed: %w", err.Error())
 		}
 	}
 
 	tx.Commit(ctx)
 	log.Println("Schema inited successfully!")
+	return nil
 }

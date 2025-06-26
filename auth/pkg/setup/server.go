@@ -17,10 +17,10 @@ func ServerUp(workDir string, url string, doLog func(...any)) (*exec.Cmd, error)
 	cmd := exec.CommandContext(ctx, "go", "build", "-o", "build/auth", "cmd/authmain.go")
 	cmd.Dir = workDir
 	if err := cmd.Start(); err != nil {
-		return nil, fmt.Errorf("Failed to start server building: %w", err)
+		return cmd, fmt.Errorf("Failed to start server building: %w", err)
 	}
 	if err := cmd.Wait(); err != nil {
-		return nil, fmt.Errorf("Failed to build server: %w", err)
+		return cmd, fmt.Errorf("Failed to build server: %w", err)
 	}
 
 	cmd = exec.Command("./build/auth")
@@ -29,11 +29,11 @@ func ServerUp(workDir string, url string, doLog func(...any)) (*exec.Cmd, error)
 	cmd.Stderr = os.Stderr
 
 	if err := cmd.Start(); err != nil {
-		return nil, fmt.Errorf("Failed to start server: %w", err)
+		return cmd, fmt.Errorf("Failed to start server: %w", err)
 	}
 
 	if err := WaitForServerReady(url, 5*time.Second); err != nil {
-		return nil, err
+		return cmd, err
 	}
 
 	doLog("Server started successfully")

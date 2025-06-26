@@ -8,22 +8,25 @@ import (
 )
 
 var Loggers = struct {
+	Debug   *log.Logger
 	Request *log.Logger
 	Test    *log.Logger
 }{}
 
 var allLoggers = map[string]**log.Logger{
+	"debug.log":   &Loggers.Debug,
 	"request.log": &Loggers.Request,
 	"test.log":    &Loggers.Test,
 }
 
+var DLog func(...any)
 var TLog func(...any)
 
-func Init(workDir string) {
+func Init(workDir string) error {
 	logDir := filepath.Join(workDir, "logs")
 	err := os.MkdirAll(logDir, 0755)
 	if err != nil {
-		panic("Can't create \"logs\" directory")
+		return err
 	}
 
 	for fileName, loggerPtr := range allLoggers {
@@ -33,13 +36,15 @@ func Init(workDir string) {
 			0644,
 		)
 		if err != nil {
-			panic("Can't open \"test.log\" file")
+			return err
 		}
 
 		*loggerPtr = log.New(logFile, "", log.LstdFlags|log.Lshortfile)
 	}
 
+	DLog = Loggers.Debug.Println
 	TLog = Loggers.Test.Println
+	return nil
 }
 
 func Deinit() {

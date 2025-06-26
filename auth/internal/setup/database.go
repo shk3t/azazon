@@ -1,7 +1,6 @@
-package database
+package setup
 
 import (
-	"auth/internal/config"
 	"context"
 	"fmt"
 
@@ -10,8 +9,9 @@ import (
 
 var ConnPool *pgxpool.Pool
 
-func Connect(ctx context.Context) {
-	envDb := config.Env.Db
+func ConnectDatabase() error {
+	envDb := Env.Db
+	ctx := context.Background()
 
 	databaseUrl := fmt.Sprintf(
 		"postgres://%s:%s@%s:%d/%s",
@@ -21,8 +21,8 @@ func Connect(ctx context.Context) {
 	var err error
 	ConnPool, err = pgxpool.New(ctx, databaseUrl)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
-	InitSchema(ctx)
+	return InitDatabaseSchema(ctx)
 }

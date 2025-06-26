@@ -1,12 +1,13 @@
 package main
 
 import (
-	"auth/internal/config"
-	"auth/internal/database"
+	"auth/internal/middleware"
 	"auth/internal/router"
-	"context"
+	"auth/internal/setup"
+	"auth/pkg/sugar"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -15,21 +16,18 @@ import (
 var dbPool *pgxpool.Pool
 
 func main() {
-	ctx := context.Background()
 
-	if err := config.LoadEnvs("../.env"); err != nil {
+	err := setup.InitAll("../.env", sugar.Default(os.Getwd()))
+	if err != nil {
 		panic(err)
 	}
 
-	database.Connect(ctx)
-	defer database.ConnPool.Close()
-
 	mux := http.NewServeMux()
 	router.SetupRoutes(mux)
-	router.SetupMiddlewares(mux)
+	wrapped := middleware.LoggingMiddleware(mux)
 
-	log.Printf("Server is running on port %d\n", config.Env.Port)
-	err := http.ListenAndServe(":"+strconv.Itoa(config.Env.Port), mux)
+	log.Printf("Server is running on port %d\n", setup.Env.Port)
+	err = http.ListenAndServe(":"+strconv.Itoa(setup.Env.Port), wrapped)
 	if err != nil {
 		panic(err)
 	}
