@@ -4,7 +4,7 @@ import (
 	"auth/internal/middleware"
 	"auth/internal/router"
 	"auth/internal/setup"
-	"auth/pkg/sugar"
+	"base/pkg/sugar"
 	"log"
 	"net/http"
 	"os"
@@ -16,7 +16,6 @@ import (
 var dbPool *pgxpool.Pool
 
 func main() {
-
 	err := setup.InitAll("../.env", sugar.Default(os.Getwd()))
 	if err != nil {
 		panic(err)

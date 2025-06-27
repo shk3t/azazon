@@ -3,9 +3,9 @@ package authtest
 import (
 	m "auth/internal/model"
 	"auth/internal/setup"
-	"auth/pkg/log"
-	setuppkg "auth/pkg/setup"
-	"auth/pkg/sugar"
+	"base/pkg/log"
+	baseSetup "base/pkg/setup"
+	"base/pkg/sugar"
 	"bytes"
 	"encoding/json"
 	"fmt"
@@ -31,9 +31,9 @@ func TestMain(m *testing.M) {
 	}
 
 	baseUrl = fmt.Sprintf("http://localhost:%d", setup.Env.Port)
-	cmd, err := setuppkg.ServerUp(workDir, baseUrl, log.TLog)
+	cmd, err := baseSetup.ServerUp(workDir, baseUrl, log.TLog)
 	if err != nil {
-		setuppkg.ServerDown(cmd, log.TLog)
+		baseSetup.ServerDown(cmd, log.TLog)
 		log.TLog(err)
 		setup.GracefullExit(1)
 	}
@@ -41,7 +41,7 @@ func TestMain(m *testing.M) {
 	log.TLog("Running tests...")
 	exitCode := m.Run()
 	log.TLog("Test run finished")
-	setuppkg.ServerDown(cmd, log.TLog)
+	baseSetup.ServerDown(cmd, log.TLog)
 	setup.GracefullExit(exitCode)
 }
 

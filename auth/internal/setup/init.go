@@ -1,8 +1,8 @@
 package setup
 
 import (
-	"auth/pkg/log"
-	setuppkg "auth/pkg/setup"
+	"base/pkg/log"
+	baseSetup "base/pkg/setup"
 	"os"
 )
 
@@ -32,7 +32,7 @@ func deinitAll() {
 	ConnPool.Close()
 }
 
-var initializer = setuppkg.NewInitializer(
+var initializer = baseSetup.NewInitializer(
 	func(args ...any) error {
 		return initAll(args[0].(string), args[1].(string))
 	},

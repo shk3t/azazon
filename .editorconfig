@@ -8,5 +8,8 @@ indent_size = 4
 trim_trailing_whitespace = true
 insert_final_newline = false
 
+[*.proto]
+indent_size = 4
+
 [*.lua]
 indent_size = 2

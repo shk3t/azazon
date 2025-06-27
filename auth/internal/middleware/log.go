@@ -1,7 +1,7 @@
 package middleware
 
 import (
-	"auth/pkg/log"
+	"base/pkg/log"
 	"net/http"
 	"time"
 )

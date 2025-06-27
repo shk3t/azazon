@@ -1,7 +1,7 @@
 package setup
 
 import (
-	"auth/pkg/sugar"
+	"base/pkg/sugar"
 	"fmt"
 	"os"
 
