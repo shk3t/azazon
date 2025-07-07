@@ -10,14 +10,14 @@ import (
 	"github.com/joho/godotenv"
 )
 
-var Env envConfig
+var Env envFields
 
-func LoadEnvs(envPath string) error {
+func LoadEnv(envPath string) error {
 	if err := godotenv.Load(envPath); err != nil {
 		return fmt.Errorf("Error loading .env file:\n\t%w", err)
 	}
 
-	Env = envConfig{
+	Env = envFields{
 		Port: sugar.Default(strconv.Atoi(getenv("PORT"))),
 		Db: dbConfig{
 			User:     getenv("DB_USER"),
@@ -47,7 +47,7 @@ type dbConfig struct {
 	Name     string
 }
 
-type envConfig struct {
+type envFields struct {
 	Port      int
 	Db        dbConfig
 	SecretKey string

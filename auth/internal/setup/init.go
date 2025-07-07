@@ -7,7 +7,7 @@ import (
 )
 
 func initAll(envPath string, workDir string) error {
-	if err := LoadEnvs(envPath); err != nil {
+	if err := LoadEnv(envPath); err != nil {
 		return err
 	}
 	if err := log.Init(workDir); err != nil {
