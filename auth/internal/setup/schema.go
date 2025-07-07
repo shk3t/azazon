@@ -29,7 +29,7 @@ func InitDatabaseSchema(ctx context.Context) error {
 	for _, tableDef := range tableDefinitions {
 		_, err := tx.Exec(ctx, tableDef)
 		if err != nil {
-			return fmt.Errorf("Schema initiation failed: %w", err.Error())
+			return fmt.Errorf("Schema initiation failed: %w", err)
 		}
 	}
 

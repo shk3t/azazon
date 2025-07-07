@@ -4,7 +4,7 @@ package auth;
 
 option go_package = "auth/internal/api";
 
-service AuthService {
+service Auth {
     rpc Register(User) returns (AuthResponse);
     rpc Login(User) returns (AuthResponse);
 }
