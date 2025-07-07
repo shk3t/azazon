@@ -137,8 +137,8 @@ const file_auth_proto_rawDesc = "" +
 	"\fAuthResponse\x12\x1e\n" +
 	"\x04user\x18\x01 \x01(\v2\n" +
 	".auth.UserR\x04user\x12\x14\n" +
-	"\x05token\x18\x02 \x01(\tR\x05token2[\n" +
-	"\x04Auth\x12*\n" +
+	"\x05token\x18\x02 \x01(\tR\x05token2b\n" +
+	"\vAuthService\x12*\n" +
 	"\bRegister\x12\n" +
 	".auth.User\x1a\x12.auth.AuthResponse\x12'\n" +
 	"\x05Login\x12\n" +
@@ -163,10 +163,10 @@ var file_auth_proto_goTypes = []any{
 }
 var file_auth_proto_depIdxs = []int32{
 	0, // 0: auth.AuthResponse.user:type_name -> auth.User
-	0, // 1: auth.Auth.Register:input_type -> auth.User
-	0, // 2: auth.Auth.Login:input_type -> auth.User
-	1, // 3: auth.Auth.Register:output_type -> auth.AuthResponse
-	1, // 4: auth.Auth.Login:output_type -> auth.AuthResponse
+	0, // 1: auth.AuthService.Register:input_type -> auth.User
+	0, // 2: auth.AuthService.Login:input_type -> auth.User
+	1, // 3: auth.AuthService.Register:output_type -> auth.AuthResponse
+	1, // 4: auth.AuthService.Login:output_type -> auth.AuthResponse
 	3, // [3:5] is the sub-list for method output_type
 	1, // [1:3] is the sub-list for method input_type
 	1, // [1:1] is the sub-list for extension type_name
