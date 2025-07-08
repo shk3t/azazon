@@ -1,6 +1,7 @@
 package setup
 
 import (
+	"auth/internal/database"
 	"base/pkg/log"
 	baseSetup "base/pkg/setup"
 	"os"
@@ -13,7 +14,7 @@ func initAll(envPath string, workDir string) error {
 	if err := log.Init(workDir); err != nil {
 		return err
 	}
-	if err := ConnectDatabase(); err != nil {
+	if err := database.ConnectDatabase(Env.Db, Env.Test); err != nil {
 		return err
 	}
 
@@ -29,7 +30,7 @@ func deinitAll() {
 		log.DLog("Config deinitialization...")
 	}
 	log.Deinit()
-	ConnPool.Close()
+	database.ConnPool.Close()
 }
 
 var initializer = baseSetup.NewInitializer(

@@ -1,11 +1,10 @@
 package handler
 
 import (
-	m "auth/internal/model"
-	q "auth/internal/query"
+	"auth/internal/model"
+	"auth/internal/query"
 	"auth/internal/setup"
 	"context"
-	"encoding/json"
 	"net/http"
 	"time"
 
@@ -23,7 +22,7 @@ func checkPasswordHash(password, hash string) bool {
 	return err == nil
 }
 
-func getJwtToken(user *m.User) (string, error) {
+func getJwtToken(user *model.User) (string, error) {
 	claims := jwt.MapClaims{
 		"id":    user.Id,
 		"login": user.Login,
@@ -34,81 +33,53 @@ func getJwtToken(user *m.User) (string, error) {
 	return encodedToken, err
 }
 
-func Register(w http.ResponseWriter, r *http.Request) {
-	ctx := context.Background()
-	body := m.User{}
-	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
+func Register(ctx context.Context, body *model.User) (*model.AuthResponse, *HandlerError) {
 	if body.Login == "" || body.Password == "" {
-		http.Error(w, "Login and password must be provided", http.StatusBadRequest)
-		return
+		return nil, NewErr(http.StatusBadRequest, "Login and password must be provided")
 	}
 	if len(body.Password) < 8 {
-		http.Error(w, "Password is too short", http.StatusBadRequest)
-		return
+		return nil, NewErr(http.StatusBadRequest, "Password is too short")
 	}
-	if q.IsLoginInUse(ctx, body.Login) {
-		http.Error(w, "Login is already in use", http.StatusBadRequest)
-		return
+	if query.IsLoginInUse(ctx, body.Login) {
+		return nil, NewErr(http.StatusBadRequest, "Login is already in use")
 	}
 
 	passwordHash, err := hashPassword(body.Password)
 	if err != nil {
-		http.Error(w, "", http.StatusInternalServerError)
-		return
+		return nil, NewErr(http.StatusInternalServerError, "")
 	}
 
-	user := &m.User{Login: body.Login, Password: passwordHash}
-	user, err = q.CreateUser(ctx, user)
+	user := &model.User{Login: body.Login, Password: passwordHash}
+	user, err = query.CreateUser(ctx, user)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
+		return nil, NewErr(http.StatusBadRequest, err.Error())
 	}
 
 	encodedToken, err := getJwtToken(user)
 	if err != nil {
-		http.Error(w, "", http.StatusInternalServerError)
-		return
+		return nil, NewErr(http.StatusInternalServerError, "")
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(m.AuthResponse{User: user, Token: encodedToken})
+	return &model.AuthResponse{User: user, Token: encodedToken}, nil
 }
 
-func Login(w http.ResponseWriter, r *http.Request) {
-	ctx := context.Background()
-	body := m.User{}
-	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
+func Login(ctx context.Context, body *model.User) (*model.AuthResponse, *HandlerError) {
 	if body.Login == "" || body.Password == "" {
-		http.Error(w, "Login and password must be provided", http.StatusBadRequest)
-		return
+		return nil, NewErr(http.StatusBadRequest, "Login and password must be provided")
 	}
 
-	user, err := q.GetUserByLogin(ctx, body.Login)
+	user, err := query.GetUserByLogin(ctx, body.Login)
 	if err != nil {
-		http.Error(w, "Login or password is not valid", http.StatusUnauthorized)
-		return
+		return nil, NewErr(http.StatusUnauthorized, "Login or password is not valid")
 	}
 	if valid := checkPasswordHash(body.Password, user.Password); !valid {
-		http.Error(w, "Login or password is not valid", http.StatusUnauthorized)
-		return
+		return nil, NewErr(http.StatusUnauthorized, "Login or password is not valid")
 	}
 
 	encodedToken, err := getJwtToken(user)
 	if err != nil {
-		http.Error(w, "", http.StatusInternalServerError)
-		return
+		return nil, NewErr(http.StatusInternalServerError, "")
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(m.AuthResponse{User: user, Token: encodedToken})
+	return &model.AuthResponse{User: user, Token: encodedToken}, nil
 }

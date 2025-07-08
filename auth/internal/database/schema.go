@@ -1,4 +1,4 @@
-package setup
+package database
 
 import (
 	"context"
@@ -17,11 +17,11 @@ var tableDefinitions = [...]string{
     )`,
 }
 
-func InitDatabaseSchema(ctx context.Context) error {
+func InitDatabaseSchema(ctx context.Context, isTestEnv bool) error {
 	tx, _ := ConnPool.BeginTx(ctx, pgx.TxOptions{})
 	defer tx.Rollback(ctx)
 
-	if Env.Test {
+	if isTestEnv {
 		tx.Exec(ctx, "DROP SCHEMA IF EXISTS public CASCADE")
 		tx.Exec(ctx, "CREATE SCHEMA public")
 	}

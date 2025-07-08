@@ -1,22 +1,29 @@
 package server
 
 import (
+	"auth/internal/handler"
+	"auth/internal/model"
 	api "base/api/go"
 	"context"
-
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
-type Server struct {
+type AuthServer struct {
 	api.UnimplementedAuthServiceServer
 	auth api.AuthServiceServer
 }
 
-func (s *Server) Register(context.Context, *api.User) (*api.AuthResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Register not implemented")
+func (s *AuthServer) Register(ctx context.Context, in *api.User) (*api.AuthResponse, error) {
+	resp, err := handler.Register(ctx, model.NewUserFromGrpc(in))
+	if err != nil {
+		return nil, err.Grpc()
+	}
+	return resp.Grpc(), nil
 }
 
-func (s *Server) Login(context.Context, *api.User) (*api.AuthResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Login not implemented")
+func (s *AuthServer) Login(ctx context.Context, in *api.User) (*api.AuthResponse, error) {
+	resp, err := handler.Login(ctx, model.NewUserFromGrpc(in))
+	if err != nil {
+		return nil, err.Grpc()
+	}
+	return resp.Grpc(), nil
 }

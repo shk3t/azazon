@@ -1,6 +1,7 @@
 package setup
 
 import (
+	"auth/internal/database"
 	"base/pkg/sugar"
 	"fmt"
 	"os"
@@ -19,7 +20,7 @@ func LoadEnv(envPath string) error {
 
 	Env = envFields{
 		Port: sugar.Default(strconv.Atoi(getenv("PORT"))),
-		Db: dbConfig{
+		Db: database.DbConfig{
 			User:     getenv("DB_USER"),
 			Password: getenv("DB_PASSWORD"),
 			Host:     getenv("DB_HOST"),
@@ -39,17 +40,9 @@ func LoadEnv(envPath string) error {
 
 const ServiceName = "AUTH"
 
-type dbConfig struct {
-	User     string
-	Password string
-	Host     string
-	Port     int
-	Name     string
-}
-
 type envFields struct {
 	Port      int
-	Db        dbConfig
+	Db        database.DbConfig
 	SecretKey string
 	Test      bool
 }

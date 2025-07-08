@@ -2,7 +2,6 @@ package main
 
 import (
 	"auth/internal/middleware"
-	"auth/internal/router"
 	"auth/internal/server"
 	"auth/internal/setup"
 	api "base/api/go"
@@ -24,11 +23,10 @@ func main() {
 		panic(err)
 	}
 
-	gRPCServer := grpc.NewServer() // TODO: что с этим можно сделать; TODO: что это такое?
-	api.RegisterAuthServiceServer(gRPCServer, &server.Server{}) // TODO: Зачем еще один уровень абстракций?
+	gRPCServer := grpc.NewServer()
+	api.RegisterAuthServiceServer(gRPCServer, &server.AuthServer{})
 
 	mux := http.NewServeMux()
-	router.SetupRoutes(mux)
 	wrapped := middleware.LoggingMiddleware(mux)
 
 	log.Printf("Server is running on port %d\n", setup.Env.Port)

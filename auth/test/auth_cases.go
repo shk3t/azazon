@@ -1,21 +1,21 @@
 package authtest
 
 import (
-	m "auth/internal/model"
+	"auth/internal/model"
 )
 
 var registerTestCases = []struct {
-	payload      m.User
-	response   m.AuthResponse
+	payload    model.User
+	response   model.AuthResponse
 	statusCode int
 }{
 	{
-		payload: m.User{
+		payload: model.User{
 			Login:    "man",
 			Password: "somepassword",
 		},
-		response: m.AuthResponse{
-			User: &m.User{
+		response: model.AuthResponse{
+			User: &model.User{
 				Login: "man",
 			},
 		},

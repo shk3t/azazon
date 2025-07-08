@@ -1,7 +1,7 @@
 package authtest
 
 import (
-	m "auth/internal/model"
+	"auth/internal/model"
 	"auth/internal/setup"
 	"base/pkg/log"
 	baseSetup "base/pkg/setup"
@@ -74,7 +74,7 @@ func TestRegister(t *testing.T) {
 			continue
 		}
 
-		body := m.AuthResponse{}
+		body := model.AuthResponse{}
 		err = json.NewDecoder(resp.Body).Decode(&body)
 		if err != nil {
 			t.Fatal(err)
