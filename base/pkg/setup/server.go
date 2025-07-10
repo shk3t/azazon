@@ -1,13 +1,32 @@
 package setup
 
 import (
+	api "base/api/go"
 	"context"
 	"fmt"
-	"net/http"
 	"os"
 	"os/exec"
 	"time"
+
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
+
+func GetClient(url string) (
+	client api.AuthServiceClient,
+	closeConn func() error,
+	err error,
+) {
+	conn, err := grpc.NewClient(
+		url, grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	client = api.NewAuthServiceClient(conn)
+	return client, conn.Close, nil
+}
 
 func ServerUp(workDir string, url string, doLog func(...any)) (*exec.Cmd, error) {
 	doLog(fmt.Sprintf("Starting server in `%s` dir...", workDir))
@@ -41,14 +60,25 @@ func ServerUp(workDir string, url string, doLog func(...any)) (*exec.Cmd, error)
 }
 
 func WaitForServerReady(url string, timeout time.Duration) error {
-	start := time.Now()
-	for time.Since(start) < timeout {
-		if _, err := http.Get(url); err == nil {
-			return nil
+	ticker := time.NewTicker(500 * time.Millisecond)
+	done := make(chan struct{})
+
+	go func() {
+		time.Sleep(timeout)
+		ticker.Stop()
+		done <- struct{}{}
+	}()
+
+	for {
+		select {
+		case <-ticker.C:
+			if _, _, err := GetClient(url); err == nil {
+				return nil
+			}
+		case <-done:
+			return fmt.Errorf("Server not ready after %s", timeout)
 		}
-		time.Sleep(500 * time.Millisecond)
 	}
-	return fmt.Errorf("Server not ready after %s", timeout)
 }
 
 func ServerDown(cmd *exec.Cmd, doLog func(...any)) {

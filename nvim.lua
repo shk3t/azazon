@@ -2,10 +2,11 @@ return {
   debug = {
     go = {
       {
+        name = "Test auth",
         type = "delve",
         request = "launch",
-        name = "Default",
-        program = "cmd/authmain.go",
+        mode = "test",
+        program = "./auth/test",
       },
     },
   },

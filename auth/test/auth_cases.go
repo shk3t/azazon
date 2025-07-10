@@ -2,12 +2,14 @@ package authtest
 
 import (
 	"auth/internal/model"
+
+	"google.golang.org/grpc/codes"
 )
 
 var registerTestCases = []struct {
 	payload    model.User
 	response   model.AuthResponse
-	statusCode int
+	statusCode codes.Code
 }{
 	{
 		payload: model.User{
@@ -19,6 +21,6 @@ var registerTestCases = []struct {
 				Login: "man",
 			},
 		},
-		statusCode: 200,
+		statusCode: codes.OK,
 	},
 }

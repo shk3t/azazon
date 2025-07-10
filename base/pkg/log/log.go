@@ -11,16 +11,20 @@ var Loggers = struct {
 	Debug   *log.Logger
 	Request *log.Logger
 	Test    *log.Logger
+	Run     *log.Logger
 }{}
 
-var allLoggers = map[string]**log.Logger{
+var fileLoggers = map[string]**log.Logger{
 	"debug.log":   &Loggers.Debug,
 	"request.log": &Loggers.Request,
 	"test.log":    &Loggers.Test,
 }
 
-var DLog func(...any)
-var TLog func(...any)
+var (
+	DLog func(...any)
+	TLog func(...any)
+	RLog func(...any)
+)
 
 func Init(workDir string) error {
 	logDir := filepath.Join(workDir, "logs")
@@ -29,7 +33,7 @@ func Init(workDir string) error {
 		return err
 	}
 
-	for fileName, loggerPtr := range allLoggers {
+	for fileName, loggerPtr := range fileLoggers {
 		logFile, err := os.OpenFile(
 			filepath.Join(logDir, fileName),
 			os.O_APPEND|os.O_CREATE|os.O_WRONLY,
@@ -42,13 +46,17 @@ func Init(workDir string) error {
 		*loggerPtr = log.New(logFile, "", log.LstdFlags|log.Lshortfile)
 	}
 
+	Loggers.Run = log.New(os.Stdout, "", log.LstdFlags|log.Lshortfile)
+
 	DLog = Loggers.Debug.Println
 	TLog = Loggers.Test.Println
+	RLog = Loggers.Run.Println
+
 	return nil
 }
 
 func Deinit() {
-	for _, loggerPtr := range allLoggers {
+	for _, loggerPtr := range fileLoggers {
 		if loggerPtr == nil {
 			continue
 		}

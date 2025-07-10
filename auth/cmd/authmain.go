@@ -1,13 +1,12 @@
 package main
 
 import (
-	"auth/internal/middleware"
 	"auth/internal/server"
 	"auth/internal/setup"
 	api "base/api/go"
+	"base/pkg/log"
 	"base/pkg/sugar"
-	"log"
-	"net/http"
+	"net"
 	"os"
 	"strconv"
 
@@ -23,14 +22,16 @@ func main() {
 		panic(err)
 	}
 
-	gRPCServer := grpc.NewServer()
-	api.RegisterAuthServiceServer(gRPCServer, &server.AuthServer{})
+	lis, err := net.Listen("tcp", ":"+strconv.Itoa(setup.Env.Port))
+	if err != nil {
+		panic(err)
+	}
 
-	mux := http.NewServeMux()
-	wrapped := middleware.LoggingMiddleware(mux)
+	srv := grpc.NewServer()
+	api.RegisterAuthServiceServer(srv, &server.AuthServer{})
 
-	log.Printf("Server is running on port %d\n", setup.Env.Port)
-	err = http.ListenAndServe(":"+strconv.Itoa(setup.Env.Port), wrapped)
+	log.RLog("Server is running on :" + strconv.Itoa(setup.Env.Port))
+	err = srv.Serve(lis)
 	if err != nil {
 		panic(err)
 	}

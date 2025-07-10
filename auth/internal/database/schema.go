@@ -3,7 +3,6 @@ package database
 import (
 	"context"
 	"fmt"
-	"log"
 
 	"github.com/jackc/pgx/v5"
 )
@@ -34,6 +33,5 @@ func InitDatabaseSchema(ctx context.Context, isTestEnv bool) error {
 	}
 
 	tx.Commit(ctx)
-	log.Println("Schema inited successfully!")
 	return nil
 }

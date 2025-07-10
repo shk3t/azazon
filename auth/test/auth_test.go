@@ -1,21 +1,21 @@
 package authtest
 
 import (
-	"auth/internal/model"
 	"auth/internal/setup"
 	"base/pkg/log"
 	baseSetup "base/pkg/setup"
 	"base/pkg/sugar"
-	"bytes"
-	"encoding/json"
+	"context"
 	"fmt"
-	"net/http"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
-var baseUrl string
+var grpcUrl string
 
 func TestMain(m *testing.M) {
 	workDir := filepath.Dir(sugar.Default(os.Getwd()))
@@ -30,8 +30,8 @@ func TestMain(m *testing.M) {
 		setup.GracefullExit(1)
 	}
 
-	baseUrl = fmt.Sprintf("http://localhost:%d", setup.Env.Port)
-	cmd, err := baseSetup.ServerUp(workDir, baseUrl, log.TLog)
+	grpcUrl = fmt.Sprintf("localhost:%d", setup.Env.Port)
+	cmd, err := baseSetup.ServerUp(workDir, grpcUrl, log.TLog)
 	if err != nil {
 		baseSetup.ServerDown(cmd, log.TLog)
 		log.TLog(err)
@@ -46,44 +46,34 @@ func TestMain(m *testing.M) {
 }
 
 func TestRegister(t *testing.T) {
+	client, closeConn, _ := baseSetup.GetClient(grpcUrl)
+	defer closeConn()
+
 	for _, testCase := range registerTestCases {
-		jsonData, err := json.Marshal(testCase.payload)
-		if err != nil {
+		ctx := context.Background()
+
+		out, err := client.Register(ctx, testCase.payload.Grpc())
+		st, ok := status.FromError(err)
+		if !ok {
 			t.Fatal(err)
 		}
 
-		resp, err := http.Post(
-			baseUrl+"/auth/register",
-			"application/json",
-			bytes.NewBuffer(jsonData),
-		)
-		if err != nil {
-			t.Fatal(err)
-		}
-		defer resp.Body.Close()
-
-		if resp.StatusCode != testCase.statusCode {
+		if st.Code() != testCase.statusCode {
 			t.Fatalf(
 				"Unexpected statusCode: %d\nExpected: %d",
-				resp.StatusCode,
+				st.Code(),
 				testCase.statusCode,
 			)
 		}
 
-		if resp.StatusCode >= 400 {
+		if st.Code() != codes.OK {
 			continue
 		}
 
-		body := model.AuthResponse{}
-		err = json.NewDecoder(resp.Body).Decode(&body)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		if body.User.Login != testCase.response.User.Login {
+		if out.User.Login != testCase.response.User.Login {
 			t.Fatalf(
 				"Unexpected user login: %s\nExpected: %s",
-				body.User.Login,
+				out.User.Login,
 				testCase.response.User.Login,
 			)
 		}
