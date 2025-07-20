@@ -8,42 +8,27 @@ import (
 
 const userBaseSelectQuery = "SELECT * FROM \"user\" "
 
-func GetUser(ctx context.Context, id int) (*model.User, error) {
-	user := model.User{}
-	err := db.ConnPool.QueryRow(
-		ctx, userBaseSelectQuery+"WHERE id = $1", id,
-	).Scan(&user.Id, &user.Login, &user.Password)
-	return &user, err
-}
-
-func GetUserByLogin(ctx context.Context, login string) (*model.User, error) {
+func GetUserByLogin(ctx context.Context, login string) (model.User, error) {
 	user := model.User{}
 	err := db.ConnPool.QueryRow(
 		ctx, userBaseSelectQuery+"WHERE login = $1", login,
 	).Scan(&user.Id, &user.Login, &user.Password)
-	return &user, err
+	return user, err
 }
 
-func IsLoginInUse(ctx context.Context, login string) bool {
-	var exists bool
-	db.ConnPool.QueryRow(
-		ctx, "SELECT EXISTS(SELECT 1 FROM \"user\" WHERE login = $1)", login,
-	).Scan(&exists)
-	return exists
-}
-
-func CreateUser(ctx context.Context, u *model.User) (*model.User, error) {
+func CreateUser(ctx context.Context, u model.User) (int, error) {
+	var id int
 	err := db.ConnPool.QueryRow(
 		ctx, `
         INSERT INTO "user" (login, password)
         VALUES ($1, $2)
         RETURNING id`,
 		u.Login, u.Password,
-	).Scan(&u.Id)
-	return u, err
+	).Scan(&id)
+	return id, err
 }
 
-func UpdateUser(ctx context.Context, id int, u *model.User) error {
+func UpdateUser(ctx context.Context, id int, u model.User) error {
 	_, err := db.ConnPool.Exec(
 		ctx,
 		"UPDATE \"user\" SET login = $1, password = $2 WHERE id = $3",
