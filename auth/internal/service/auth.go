@@ -3,8 +3,8 @@ package service
 import (
 	"auth/internal/setup"
 	"auth/internal/store"
-	errorpkg "base/pkg/errors"
-	"base/pkg/grpcutils"
+	errorpkg "base/pkg/error"
+	"base/pkg/grpcutil"
 	"base/pkg/model"
 	"context"
 	"errors"
@@ -15,7 +15,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-var NewErr = grpcutils.NewError
+var NewErr = grpcutil.NewError
 
 type userStore interface {
 	Get(ctx context.Context, login string) (*model.User, error)
@@ -37,7 +37,7 @@ func NewAuthService() *AuthService {
 func (s *AuthService) Register(
 	ctx context.Context,
 	body *model.User,
-) (*model.AuthResponse, *grpcutils.HandlerError) {
+) (*model.AuthResponse, *grpcutil.HandlerError) {
 	if body.Login == "" || body.Password == "" {
 		return nil, NewErr(http.StatusBadRequest, "Login and password must be provided")
 	}
@@ -67,7 +67,7 @@ func (s *AuthService) Register(
 func (s *AuthService) Login(
 	ctx context.Context,
 	body *model.User,
-) (*model.AuthResponse, *grpcutils.HandlerError) {
+) (*model.AuthResponse, *grpcutil.HandlerError) {
 	if body.Login == "" || body.Password == "" {
 		return nil, NewErr(http.StatusBadRequest, "Login and password must be provided")
 	}
@@ -104,7 +104,7 @@ func getJwtToken(user *model.User) (string, error) {
 	claims := jwt.MapClaims{
 		"id":    user.Id,
 		"login": user.Login,
-		"exp":   time.Now().Add(24 * 30 * time.Hour).Unix(),
+		"exp":   time.Now().Add(30 * 24 * time.Hour).Unix(),
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	encodedToken, err := token.SignedString([]byte(setup.Env.SecretKey))
