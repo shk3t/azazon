@@ -12,7 +12,7 @@ var tableDefinitions = [...]string{
     CREATE TABLE IF NOT EXISTS "user" (
         id SERIAL PRIMARY KEY,
         login VARCHAR(64) NOT NULL UNIQUE,
-        password VARCHAR(128) NOT NULL
+        password_hash VARCHAR(128) NOT NULL
     )`,
 }
 

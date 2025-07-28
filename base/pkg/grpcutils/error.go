@@ -1,7 +1,6 @@
-package handler
+package grpcutils
 
 import (
-	"base/pkg/grpcutils"
 	"fmt"
 
 	"google.golang.org/grpc/status"
@@ -12,7 +11,7 @@ type HandlerError struct {
 	Message  string
 }
 
-func NewErr(code int, msg string) *HandlerError {
+func NewError(code int, msg string) *HandlerError {
 	return &HandlerError{HttpCode: code, Message: msg}
 }
 
@@ -22,7 +21,7 @@ func (err HandlerError) Error() string {
 
 func (err HandlerError) Grpc() error {
 	return status.Error(
-		grpcutils.HttpToGrpcStatus(err.HttpCode),
+		HttpToGrpcStatus(err.HttpCode),
 		err.Message,
 	)
 }

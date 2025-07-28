@@ -4,8 +4,15 @@ if [[ $(basename $PWD) == "azazon" ]]; then
     cd base
 fi
 
-protoc \
-    --proto_path=./api/proto \
-    --go_out=paths=source_relative:./api/go \
-    --go-grpc_out=paths=source_relative:./api/go \
-    ./api/proto/*.proto
+modules=(auth)
+
+for module in $modules; do
+    mkdir -p api/${module}
+    protoc \
+        --go_opt=paths=source_relative \
+        --go-grpc_opt=paths=source_relative \
+        --proto_path=./api/proto \
+        --go_out=./api/auth \
+        --go-grpc_out=./api/auth \
+        ./api/proto/auth.proto
+done

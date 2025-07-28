@@ -18,17 +18,10 @@ func initAll(envPath string, workDir string) error {
 		return err
 	}
 
-	if log.DLog != nil {
-		log.DLog("Config inited successfully")
-	}
-
 	return nil
 }
 
 func deinitAll() {
-	if log.DLog != nil {
-		log.DLog("Config deinitialization...")
-	}
 	log.Deinit()
 	database.ConnPool.Close()
 }

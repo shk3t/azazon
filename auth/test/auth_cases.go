@@ -1,23 +1,23 @@
 package authtest
 
 import (
-	"auth/internal/model"
+	"base/api/auth"
 
 	"google.golang.org/grpc/codes"
 )
 
 var registerTestCases = []struct {
-	payload    model.User
-	response   model.AuthResponse
+	payload    *auth.User
+	response   *auth.AuthResponse
 	statusCode codes.Code
 }{
 	{
-		payload: model.User{
+		payload: &auth.User{
 			Login:    "man",
 			Password: "somepassword",
 		},
-		response: model.AuthResponse{
-			User: &model.User{
+		response: &auth.AuthResponse{
+			User: &auth.User{
 				Login: "man",
 			},
 		},

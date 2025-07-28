@@ -52,7 +52,7 @@ func TestRegister(t *testing.T) {
 	for _, testCase := range registerTestCases {
 		ctx := context.Background()
 
-		out, err := client.Register(ctx, testCase.payload.Grpc())
+		out, err := client.Register(ctx, testCase.payload)
 		st, ok := status.FromError(err)
 		if !ok {
 			t.Fatal(err)

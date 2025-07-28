@@ -1,27 +1,33 @@
 package server
 
 import (
-	"auth/internal/handler"
-	"auth/internal/model"
-	api "base/api/go"
+	"auth/internal/service"
+	"base/api/auth"
+	"base/pkg/model"
 	"context"
 )
 
 type AuthServer struct {
-	api.UnimplementedAuthServiceServer
-	auth api.AuthServiceServer
+	auth.UnimplementedAuthServiceServer
+	service service.AuthService
 }
 
-func (s *AuthServer) Register(ctx context.Context, in *api.User) (*api.AuthResponse, error) {
-	resp, err := handler.Register(ctx, model.NewUserFromGrpc(in))
+func NewAuthServer() *AuthServer {
+	return &AuthServer{
+		service: *service.NewAuthService(),
+	}
+}
+
+func (s *AuthServer) Register(ctx context.Context, in *auth.User) (*auth.AuthResponse, error) {
+	resp, err := s.service.Register(ctx, model.NewUserFromGrpc(in))
 	if err != nil {
 		return nil, err.Grpc()
 	}
 	return resp.Grpc(), nil
 }
 
-func (s *AuthServer) Login(ctx context.Context, in *api.User) (*api.AuthResponse, error) {
-	resp, err := handler.Login(ctx, model.NewUserFromGrpc(in))
+func (s *AuthServer) Login(ctx context.Context, in *auth.User) (*auth.AuthResponse, error) {
+	resp, err := s.service.Login(ctx, model.NewUserFromGrpc(in))
 	if err != nil {
 		return nil, err.Grpc()
 	}

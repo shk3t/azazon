@@ -4,7 +4,7 @@ import (
 	"auth/internal/interceptor"
 	"auth/internal/server"
 	"auth/internal/setup"
-	api "base/api/go"
+	"base/api/auth"
 	"base/pkg/log"
 	"base/pkg/sugar"
 	"net"
@@ -31,7 +31,7 @@ func main() {
 	srv := grpc.NewServer(grpc.ChainUnaryInterceptor(
 		interceptor.LoggingUnaryInterceptor,
 	))
-	api.RegisterAuthServiceServer(srv, &server.AuthServer{})
+	auth.RegisterAuthServiceServer(srv, server.NewAuthServer())
 
 	log.RLog("Server is running on :" + strconv.Itoa(setup.Env.Port))
 	err = srv.Serve(lis)

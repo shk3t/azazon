@@ -1,7 +1,7 @@
 package setup
 
 import (
-	api "base/api/go"
+	"base/api/auth"
 	"context"
 	"fmt"
 	"os"
@@ -13,7 +13,7 @@ import (
 )
 
 func GetClient(url string) (
-	client api.AuthServiceClient,
+	client auth.AuthServiceClient,
 	closeConn func() error,
 	err error,
 ) {
@@ -24,7 +24,7 @@ func GetClient(url string) (
 		return nil, nil, err
 	}
 
-	client = api.NewAuthServiceClient(conn)
+	client = auth.NewAuthServiceClient(conn)
 	return client, conn.Close, nil
 }
 
@@ -88,7 +88,6 @@ func ServerDown(cmd *exec.Cmd, doLog func(...any)) {
 	}
 
 	doLog("Stopping server...")
-	doLog(cmd.Args)
 
 	if err := cmd.Process.Signal(os.Interrupt); err != nil {
 		fmt.Printf("Error sending interrupt: %v\n", err)
