@@ -1,20 +1,22 @@
 package setup
 
 import (
+	"auth/internal/config"
 	"auth/internal/database"
+	"auth/internal/server"
 	"base/pkg/log"
 	baseSetup "base/pkg/setup"
 	"os"
 )
 
 func initAll(envPath string, workDir string) error {
-	if err := LoadEnv(envPath); err != nil {
+	if err := config.LoadEnv(envPath); err != nil {
 		return err
 	}
 	if err := log.Init(workDir); err != nil {
 		return err
 	}
-	if err := database.ConnectDatabase(Env.Db, Env.Test); err != nil {
+	if err := database.ConnectDatabase(); err != nil {
 		return err
 	}
 
@@ -22,8 +24,9 @@ func initAll(envPath string, workDir string) error {
 }
 
 func deinitAll() {
-	log.Deinit()
+	server.Deinit()
 	database.ConnPool.Close()
+	log.Deinit()
 }
 
 var initializer = baseSetup.NewInitializer(

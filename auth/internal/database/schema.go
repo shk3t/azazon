@@ -1,6 +1,7 @@
 package database
 
 import (
+	"auth/internal/config"
 	"context"
 	"fmt"
 
@@ -16,11 +17,11 @@ var tableDefinitions = [...]string{
     )`,
 }
 
-func InitDatabaseSchema(ctx context.Context, isTestEnv bool) error {
+func InitDatabaseSchema(ctx context.Context) error {
 	tx, _ := ConnPool.BeginTx(ctx, pgx.TxOptions{})
 	defer tx.Rollback(ctx)
 
-	if isTestEnv {
+	if config.Env.Test {
 		tx.Exec(ctx, "DROP SCHEMA IF EXISTS public CASCADE")
 		tx.Exec(ctx, "CREATE SCHEMA public")
 	}

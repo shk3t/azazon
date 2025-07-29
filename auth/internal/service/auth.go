@@ -1,9 +1,9 @@
 package service
 
 import (
-	"auth/internal/setup"
+	"auth/internal/config"
 	"auth/internal/store"
-	errorpkg "base/pkg/error"
+	errpkg "base/pkg/error"
 	"base/pkg/grpcutil"
 	"base/pkg/model"
 	"context"
@@ -47,7 +47,7 @@ func (s *AuthService) Register(
 
 	if user, err := s.store.Get(ctx, body.Login); user != nil {
 		return nil, NewErr(http.StatusBadRequest, "Login is already in use")
-	} else if !errors.Is(err, errorpkg.NotFound) {
+	} else if !errors.Is(err, errpkg.NotFound) {
 		return nil, NewErr(http.StatusInternalServerError, "")
 	}
 
@@ -73,7 +73,7 @@ func (s *AuthService) Login(
 	}
 
 	user, err := s.store.Get(ctx, body.Login)
-	if errors.Is(err, errorpkg.NotFound) {
+	if errors.Is(err, errpkg.NotFound) {
 		return nil, NewErr(http.StatusUnauthorized, "Login or password is not valid")
 	} else if err != nil {
 		return nil, NewErr(http.StatusInternalServerError, "")
@@ -107,6 +107,5 @@ func getJwtToken(user *model.User) (string, error) {
 		"exp":   time.Now().Add(30 * 24 * time.Hour).Unix(),
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	encodedToken, err := token.SignedString([]byte(setup.Env.SecretKey))
-	return encodedToken, err
+	return token.SignedString([]byte(config.Env.SecretKey))
 }

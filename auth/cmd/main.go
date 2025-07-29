@@ -1,10 +1,10 @@
 package main
 
 import (
+	"auth/internal/config"
 	"auth/internal/interceptor"
 	"auth/internal/server"
 	"auth/internal/setup"
-	"base/api/auth"
 	"base/pkg/log"
 	"base/pkg/sugar"
 	"net"
@@ -23,17 +23,16 @@ func main() {
 		panic(err)
 	}
 
-	lis, err := net.Listen("tcp", ":"+strconv.Itoa(setup.Env.Port))
+	lis, err := net.Listen("tcp", ":"+strconv.Itoa(config.Env.Port))
 	if err != nil {
 		panic(err)
 	}
 
-	srv := grpc.NewServer(grpc.ChainUnaryInterceptor(
-		interceptor.LoggingUnaryInterceptor,
-	))
-	auth.RegisterAuthServiceServer(srv, server.NewAuthServer())
+	srv := server.CreateAuthServer(
+		grpc.ChainUnaryInterceptor(interceptor.LoggingUnaryInterceptor),
+	)
 
-	log.RLog("Server is running on :" + strconv.Itoa(setup.Env.Port))
+	log.RLog("Server is running on :" + strconv.Itoa(config.Env.Port))
 	err = srv.Serve(lis)
 	if err != nil {
 		panic(err)

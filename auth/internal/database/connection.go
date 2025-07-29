@@ -1,28 +1,22 @@
 package database
 
 import (
+	"auth/internal/config"
 	"context"
 	"fmt"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-type DbConfig struct {
-	User     string
-	Password string
-	Host     string
-	Port     int
-	Name     string
-}
-
 var ConnPool *pgxpool.Pool
 
-func ConnectDatabase(cfg DbConfig, isTestEnv bool) error {
+func ConnectDatabase() error {
 	ctx := context.Background()
+	db := config.Env.Db
 
 	databaseUrl := fmt.Sprintf(
 		"postgres://%s:%s@%s:%d/%s",
-		cfg.User, cfg.Password, cfg.Host, cfg.Port, cfg.Name,
+		db.User, db.Password, db.Host, db.Port, db.Name,
 	)
 
 	var err error
@@ -31,5 +25,5 @@ func ConnectDatabase(cfg DbConfig, isTestEnv bool) error {
 		return err
 	}
 
-	return InitDatabaseSchema(ctx, isTestEnv)
+	return InitDatabaseSchema(ctx)
 }

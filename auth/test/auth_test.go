@@ -1,6 +1,7 @@
 package authtest
 
 import (
+	"auth/internal/config"
 	"auth/internal/setup"
 	"base/pkg/log"
 	baseSetup "base/pkg/setup"
@@ -19,8 +20,8 @@ var grpcUrl string
 
 func TestMain(m *testing.M) {
 	workDir := filepath.Dir(sugar.Default(os.Getwd()))
-	os.Setenv(setup.ServiceName+"_TEST", "true")
-	os.Setenv(setup.ServiceName+"_PORT", "17071")
+	os.Setenv(config.ServiceName+"_TEST", "true")
+	os.Setenv(config.ServiceName+"_PORT", "17071")
 
 	err := setup.InitAll("../../.env", workDir)
 	if err != nil {
@@ -30,7 +31,7 @@ func TestMain(m *testing.M) {
 		setup.GracefullExit(1)
 	}
 
-	grpcUrl = fmt.Sprintf("localhost:%d", setup.Env.Port)
+	grpcUrl = fmt.Sprintf("localhost:%d", config.Env.Port)
 	cmd, err := baseSetup.ServerUp(workDir, grpcUrl, log.TLog)
 	if err != nil {
 		baseSetup.ServerDown(cmd, log.TLog)

@@ -2,7 +2,7 @@ package store
 
 import (
 	"auth/internal/query"
-	errorpkg "base/pkg/error"
+	errpkg "base/pkg/error"
 	"base/pkg/model"
 	"context"
 	"errors"
@@ -18,7 +18,7 @@ func (s *PostgreUserStore) Get(ctx context.Context, login string) (*model.User, 
 	user, err := query.GetUserByLogin(ctx, login)
 
 	if errors.Is(err, pgx.ErrNoRows) {
-		return nil, errorpkg.NotFound
+		return nil, errpkg.NotFound
 	} else if err != nil {
 		return nil, err
 	}
