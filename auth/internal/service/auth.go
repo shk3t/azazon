@@ -2,7 +2,7 @@ package service
 
 import (
 	"auth/internal/store"
-	errpkg "base/pkg/error"
+	errpkg "base/pkg/errors"
 	"base/pkg/grpcutil"
 	"base/pkg/model"
 	"base/pkg/sugar"

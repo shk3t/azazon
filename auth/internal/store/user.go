@@ -2,7 +2,7 @@ package store
 
 import (
 	"auth/internal/query"
-	errpkg "base/pkg/error"
+	errpkg "base/pkg/errors"
 	"base/pkg/model"
 	"context"
 	"errors"

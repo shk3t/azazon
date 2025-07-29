@@ -5,7 +5,7 @@ import (
 	"auth/internal/service"
 	"auth/internal/setup"
 	"base/api/auth"
-	errpkg "base/pkg/error"
+	errpkg "base/pkg/errors"
 	"base/pkg/log"
 	baseSetup "base/pkg/setup"
 	"base/pkg/sugar"
