@@ -1,27 +1,53 @@
 package authtest
 
 import (
-	"base/api/auth"
+	"base/pkg/model"
 
 	"google.golang.org/grpc/codes"
 )
 
-type decodedRegisterResponse struct {
+type decodedAuthResponse struct {
 	Login string
 }
 
 var registerTestCases = []struct {
-	payload    *auth.RegisterRequest
-	response   decodedRegisterResponse
+	request    *model.User
+	response   decodedAuthResponse
 	statusCode codes.Code
 }{
 	{
-		payload: &auth.RegisterRequest{
+		request: &model.User{
 			Login:    "man",
 			Password: "somepassword",
 		},
-		response: decodedRegisterResponse{
+		response: decodedAuthResponse{
 			Login: "man",
+		},
+		statusCode: codes.OK,
+	},
+}
+
+var loginTestCases = []struct {
+	request    *model.User
+	statusCode codes.Code
+}{
+	{
+		request: &model.User{
+			Login:    "man2",
+			Password: "somepassword2",
+		},
+		statusCode: codes.OK,
+	},
+}
+
+var validateTokenTestCases = []struct {
+	request    *model.User
+	statusCode codes.Code
+}{
+	{
+		request: &model.User{
+			Login:    "man3",
+			Password: "somepassword3",
 		},
 		statusCode: codes.OK,
 	},

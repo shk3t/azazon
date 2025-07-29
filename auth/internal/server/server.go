@@ -55,8 +55,11 @@ func (s *AuthServer) ValidateToken(
 	ctx context.Context,
 	in *auth.ValidateTokenRequest,
 ) (*auth.ValidateTokenResponse, error) {
-	resp := s.service.ValidateToken(ctx, in.Token)
-	return &auth.ValidateTokenResponse{Valid: resp}, nil
+	isValid, err := s.service.ValidateToken(ctx, in.Token)
+	if err != nil {
+		return nil, err.Grpc()
+	}
+	return &auth.ValidateTokenResponse{Valid: isValid}, nil
 }
 
 var runningServers []*grpc.Server

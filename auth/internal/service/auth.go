@@ -5,6 +5,7 @@ import (
 	errpkg "base/pkg/error"
 	"base/pkg/grpcutil"
 	"base/pkg/model"
+	"base/pkg/sugar"
 	"context"
 	"errors"
 	"net/http"
@@ -73,7 +74,7 @@ func (s *AuthService) Login(
 	} else if err != nil {
 		return nil, NewErr(http.StatusInternalServerError, "")
 	}
-	if valid := checkPasswordHash(body.Login, user.PasswordHash); !valid {
+	if valid := checkPasswordHash(body.Password, user.PasswordHash); !valid {
 		return nil, NewErr(http.StatusUnauthorized, "Login or password is not valid")
 	}
 
@@ -85,6 +86,10 @@ func (s *AuthService) Login(
 	return &model.AuthResponse{Token: token}, nil
 }
 
-func (s *AuthService) ValidateToken(ctx context.Context, token string) bool {
-	return validateJwtToken(token)
+func (s *AuthService) ValidateToken(
+	ctx context.Context,
+	token string,
+) (bool, *grpcutil.HandlerError) {
+	isValid := validateJwtToken(token)
+	return isValid, sugar.If(isValid, nil, NewErr(http.StatusUnauthorized, "Invalid Token"))
 }

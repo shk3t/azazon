@@ -32,7 +32,7 @@ func createJwtToken(user model.User) (string, error) {
 func validateJwtToken(token string) bool {
 	_, err := jwt.ParseWithClaims(
 		token,
-		authClaims{},
+		&authClaims{},
 		func(*jwt.Token) (any, error) {
 			return []byte(config.Env.SecretKey), nil
 		},
@@ -46,8 +46,5 @@ func validateJwtToken(token string) bool {
 func ParseJwtToken(token string) (*authClaims, error) {
 	claims := &authClaims{}
 	_, _, err := jwt.NewParser().ParseUnverified(token, claims)
-	if err != nil {
-		return nil, err
-	}
-	return claims, nil
+	return claims, err
 }
