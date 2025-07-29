@@ -2,9 +2,9 @@ package authtest
 
 import (
 	"auth/internal/config"
+	"auth/internal/service"
 	"auth/internal/setup"
 	"base/pkg/log"
-	baseService "base/pkg/service"
 	baseSetup "base/pkg/setup"
 	"base/pkg/sugar"
 	"context"
@@ -72,7 +72,7 @@ func TestRegister(t *testing.T) {
 			continue
 		}
 
-		claims, err := baseService.DecodeJwtToken(out.Token, config.Env.SecretKey)
+		claims, err := service.DecodeJwtToken(out.Token)
 		if err != nil {
 			t.Fatal(err)
 		}

@@ -1,12 +1,10 @@
 package service
 
 import (
-	"auth/internal/config"
 	"auth/internal/store"
 	errpkg "base/pkg/error"
 	"base/pkg/grpcutil"
 	"base/pkg/model"
-	baseService "base/pkg/service"
 	"context"
 	"errors"
 	"net/http"
@@ -53,7 +51,7 @@ func (s *AuthService) Register(
 		return nil, NewErr(http.StatusInternalServerError, "")
 	}
 
-	token, err := baseService.EncodeJwtToken(user, config.Env.SecretKey)
+	token, err := encodeJwtToken(user)
 	if err != nil {
 		return nil, NewErr(http.StatusInternalServerError, "")
 	}
@@ -79,7 +77,7 @@ func (s *AuthService) Login(
 		return nil, NewErr(http.StatusUnauthorized, "Login or password is not valid")
 	}
 
-	token, err := baseService.EncodeJwtToken(user, config.Env.SecretKey)
+	token, err := encodeJwtToken(user)
 	if err != nil {
 		return nil, NewErr(http.StatusInternalServerError, "")
 	}
