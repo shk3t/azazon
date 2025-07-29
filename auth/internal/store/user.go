@@ -14,24 +14,22 @@ type PostgreUserStore struct {
 	HashPassword func(password string) (string, error)
 }
 
-func (s *PostgreUserStore) Get(ctx context.Context, login string) (*model.User, error) {
+func (s *PostgreUserStore) Get(ctx context.Context, login string) (model.User, error) {
 	user, err := query.GetUserByLogin(ctx, login)
 
 	if errors.Is(err, pgx.ErrNoRows) {
-		return nil, errpkg.NotFound
-	} else if err != nil {
-		return nil, err
+		return user, errpkg.NotFound
 	}
 
-	return &user, nil
+	return user, err
 }
 
-func (s *PostgreUserStore) Save(ctx context.Context, user model.User) (*model.User, error) {
+func (s *PostgreUserStore) Save(ctx context.Context, user model.User) (model.User, error) {
 	var err error
 
 	user.PasswordHash, err = s.HashPassword(user.Password)
 	if err != nil {
-		return nil, err
+		return user, err
 	}
 
 	if user.Id == 0 {
@@ -40,8 +38,5 @@ func (s *PostgreUserStore) Save(ctx context.Context, user model.User) (*model.Us
 		err = query.UpdateUser(ctx, user.Id, user)
 	}
 
-	if err != nil {
-		return nil, err
-	}
-	return &user, nil
+	return user, err
 }

@@ -13,8 +13,8 @@ import (
 var NewErr = grpcutil.NewError
 
 type userStore interface {
-	Get(ctx context.Context, login string) (*model.User, error)
-	Save(ctx context.Context, user model.User) (*model.User, error)
+	Get(ctx context.Context, login string) (model.User, error)
+	Save(ctx context.Context, user model.User) (model.User, error)
 }
 
 type AuthService struct {
@@ -31,7 +31,7 @@ func NewAuthService() *AuthService {
 
 func (s *AuthService) Register(
 	ctx context.Context,
-	body *model.User,
+	body model.User,
 ) (*model.AuthResponse, *grpcutil.HandlerError) {
 	if body.Login == "" || body.Password == "" {
 		return nil, NewErr(http.StatusBadRequest, "Login and password must be provided")
@@ -40,18 +40,18 @@ func (s *AuthService) Register(
 		return nil, NewErr(http.StatusBadRequest, "Password is too short")
 	}
 
-	if user, err := s.store.Get(ctx, body.Login); user != nil {
+	if _, err := s.store.Get(ctx, body.Login); err == nil {
 		return nil, NewErr(http.StatusBadRequest, "Login is already in use")
 	} else if !errors.Is(err, errpkg.NotFound) {
 		return nil, NewErr(http.StatusInternalServerError, "")
 	}
 
-	user, err := s.store.Save(ctx, *body)
+	user, err := s.store.Save(ctx, body)
 	if err != nil {
 		return nil, NewErr(http.StatusInternalServerError, "")
 	}
 
-	token, err := encodeJwtToken(user)
+	token, err := createJwtToken(user)
 	if err != nil {
 		return nil, NewErr(http.StatusInternalServerError, "")
 	}
@@ -61,7 +61,7 @@ func (s *AuthService) Register(
 
 func (s *AuthService) Login(
 	ctx context.Context,
-	body *model.User,
+	body model.User,
 ) (*model.AuthResponse, *grpcutil.HandlerError) {
 	if body.Login == "" || body.Password == "" {
 		return nil, NewErr(http.StatusBadRequest, "Login and password must be provided")
@@ -77,10 +77,14 @@ func (s *AuthService) Login(
 		return nil, NewErr(http.StatusUnauthorized, "Login or password is not valid")
 	}
 
-	token, err := encodeJwtToken(user)
+	token, err := createJwtToken(user)
 	if err != nil {
 		return nil, NewErr(http.StatusInternalServerError, "")
 	}
 
 	return &model.AuthResponse{Token: token}, nil
+}
+
+func (s *AuthService) ValidateToken(ctx context.Context, token string) bool {
+	return validateJwtToken(token)
 }

@@ -47,6 +47,7 @@ func TestMain(m *testing.M) {
 	setup.GracefullExit(exitCode)
 }
 
+// TODO: tests for Login, Validating
 func TestRegister(t *testing.T) {
 	client, closeConn, _ := baseSetup.GetClient(grpcUrl)
 	defer closeConn()
@@ -72,7 +73,7 @@ func TestRegister(t *testing.T) {
 			continue
 		}
 
-		claims, err := service.DecodeJwtToken(out.Token)
+		claims, err := service.ParseJwtToken(out.Token)
 		if err != nil {
 			t.Fatal(err)
 		}

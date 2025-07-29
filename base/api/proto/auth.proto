@@ -7,6 +7,7 @@ option go_package = "base/internal/api/auth";
 service AuthService {
     rpc Register(RegisterRequest) returns (RegisterResponse);
     rpc Login(LoginRequest) returns (LoginResponse);
+    rpc ValidateToken(ValidateTokenRequest) returns (ValidateTokenResponse);
 }
 
 message RegisterRequest {
@@ -19,10 +20,18 @@ message LoginRequest {
     string password = 2;
 }
 
+message ValidateTokenRequest {
+    string token = 1;
+}
+
 message RegisterResponse {
-    string token = 2;
+    string token = 1;
 }
 
 message LoginResponse {
-    string token = 2;
+    string token = 1;
+}
+
+message ValidateTokenResponse {
+    bool valid = 1;
 }

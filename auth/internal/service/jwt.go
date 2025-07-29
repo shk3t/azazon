@@ -3,7 +3,6 @@ package service
 import (
 	"auth/internal/config"
 	"base/pkg/model"
-	"errors"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -15,7 +14,7 @@ type authClaims struct {
 	jwt.RegisteredClaims
 }
 
-func encodeJwtToken(user *model.User) (string, error) {
+func createJwtToken(user model.User) (string, error) {
 	claims := authClaims{
 		UserId: user.Id,
 		Login:  user.Login,
@@ -30,10 +29,10 @@ func encodeJwtToken(user *model.User) (string, error) {
 	return token.SignedString([]byte(config.Env.SecretKey))
 }
 
-func DecodeJwtToken(token string) (*authClaims, error) {
-	parsedToken, err := jwt.ParseWithClaims(
+func validateJwtToken(token string) bool {
+	_, err := jwt.ParseWithClaims(
 		token,
-		&authClaims{},
+		authClaims{},
 		func(*jwt.Token) (any, error) {
 			return []byte(config.Env.SecretKey), nil
 		},
@@ -41,14 +40,14 @@ func DecodeJwtToken(token string) (*authClaims, error) {
 		jwt.WithIssuer(config.AppName),
 	)
 
+	return err == nil
+}
+
+func ParseJwtToken(token string) (*authClaims, error) {
+	claims := &authClaims{}
+	_, _, err := jwt.NewParser().ParseUnverified(token, claims)
 	if err != nil {
 		return nil, err
 	}
-
-	claims, ok := parsedToken.Claims.(*authClaims)
-	if !ok {
-		return nil, errors.New("Invalid token")
-	}
-
 	return claims, nil
 }
