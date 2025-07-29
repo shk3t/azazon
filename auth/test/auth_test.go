@@ -4,6 +4,7 @@ import (
 	"auth/internal/config"
 	"auth/internal/setup"
 	"base/pkg/log"
+	baseService "base/pkg/service"
 	baseSetup "base/pkg/setup"
 	"base/pkg/sugar"
 	"context"
@@ -20,8 +21,8 @@ var grpcUrl string
 
 func TestMain(m *testing.M) {
 	workDir := filepath.Dir(sugar.Default(os.Getwd()))
-	os.Setenv(config.ServiceName+"_TEST", "true")
-	os.Setenv(config.ServiceName+"_PORT", "17071")
+	os.Setenv(config.AppName+"_TEST", "true")
+	os.Setenv(config.AppName+"_PORT", "17071")
 
 	err := setup.InitAll("../../.env", workDir)
 	if err != nil {
@@ -71,11 +72,16 @@ func TestRegister(t *testing.T) {
 			continue
 		}
 
-		if out.User.Login != testCase.response.User.Login {
+		claims, err := baseService.DecodeJwtToken(out.Token, config.Env.SecretKey)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if claims.Login != testCase.response.Login {
 			t.Fatalf(
 				"Unexpected user login: %s\nExpected: %s",
-				out.User.Login,
-				testCase.response.User.Login,
+				claims.Login,
+				testCase.response.Login,
 			)
 		}
 	}

@@ -10,34 +10,27 @@ type User struct {
 }
 
 type AuthResponse struct {
-	User  *User
 	Token string
 }
 
-func NewUserFromGrpc(u *auth.User) *User {
+func UserFromRegisterRequest(u *auth.RegisterRequest) *User {
 	return &User{
 		Login:    u.Login,
 		Password: u.Password,
 	}
 }
 
-func NewAuthResponseFromGrpc(r *auth.AuthResponse) *AuthResponse {
-	return &AuthResponse{
-		User:  NewUserFromGrpc(r.User),
-		Token: r.Token,
-	}
-}
-
-func (u *User) Grpc() *auth.User {
-	return &auth.User{
+func UserFromLoginRequest(u *auth.LoginRequest) *User {
+	return &User{
 		Login:    u.Login,
 		Password: u.Password,
 	}
 }
 
-func (r *AuthResponse) Grpc() *auth.AuthResponse {
-	return &auth.AuthResponse{
-		User:  r.User.Grpc(),
-		Token: r.Token,
-	}
+func (r *AuthResponse) RegisterResponse() *auth.RegisterResponse {
+	return &auth.RegisterResponse{Token: r.Token}
+}
+
+func (r *AuthResponse) LoginResponse() *auth.LoginResponse {
+	return &auth.LoginResponse{Token: r.Token}
 }

@@ -6,13 +6,10 @@ import (
 	errpkg "base/pkg/error"
 	"base/pkg/grpcutil"
 	"base/pkg/model"
+	baseService "base/pkg/service"
 	"context"
 	"errors"
 	"net/http"
-	"time"
-
-	"github.com/golang-jwt/jwt/v5"
-	"golang.org/x/crypto/bcrypt"
 )
 
 var NewErr = grpcutil.NewError
@@ -56,12 +53,12 @@ func (s *AuthService) Register(
 		return nil, NewErr(http.StatusInternalServerError, "")
 	}
 
-	encodedToken, err := getJwtToken(user)
+	token, err := baseService.EncodeJwtToken(user, config.Env.SecretKey)
 	if err != nil {
 		return nil, NewErr(http.StatusInternalServerError, "")
 	}
 
-	return &model.AuthResponse{User: user, Token: encodedToken}, nil
+	return &model.AuthResponse{Token: token}, nil
 }
 
 func (s *AuthService) Login(
@@ -82,30 +79,10 @@ func (s *AuthService) Login(
 		return nil, NewErr(http.StatusUnauthorized, "Login or password is not valid")
 	}
 
-	encodedToken, err := getJwtToken(user)
+	token, err := baseService.EncodeJwtToken(user, config.Env.SecretKey)
 	if err != nil {
 		return nil, NewErr(http.StatusInternalServerError, "")
 	}
 
-	return &model.AuthResponse{User: user, Token: encodedToken}, nil
-}
-
-func hashPassword(password string) (string, error) {
-	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 14)
-	return string(bytes), err
-}
-
-func checkPasswordHash(password, hash string) bool {
-	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
-	return err == nil
-}
-
-func getJwtToken(user *model.User) (string, error) {
-	claims := jwt.MapClaims{
-		"id":    user.Id,
-		"login": user.Login,
-		"exp":   time.Now().Add(30 * 24 * time.Hour).Unix(),
-	}
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString([]byte(config.Env.SecretKey))
+	return &model.AuthResponse{Token: token}, nil
 }

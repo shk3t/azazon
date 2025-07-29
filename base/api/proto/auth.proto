@@ -5,16 +5,24 @@ package auth;
 option go_package = "base/internal/api/auth";
 
 service AuthService {
-    rpc Register(User) returns (AuthResponse);
-    rpc Login(User) returns (AuthResponse);
+    rpc Register(RegisterRequest) returns (RegisterResponse);
+    rpc Login(LoginRequest) returns (LoginResponse);
 }
 
-message User {
+message RegisterRequest {
     string login = 1;
     string password = 2;
 }
 
-message AuthResponse {
-    User user = 1;
+message LoginRequest {
+    string login = 1;
+    string password = 2;
+}
+
+message RegisterResponse {
+    string token = 2;
+}
+
+message LoginResponse {
     string token = 2;
 }

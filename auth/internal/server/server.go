@@ -29,20 +29,20 @@ func CreateAuthServer(opts grpc.ServerOption) *grpc.Server {
 	return srv
 }
 
-func (s *AuthServer) Register(ctx context.Context, in *auth.User) (*auth.AuthResponse, error) {
-	resp, err := s.service.Register(ctx, model.NewUserFromGrpc(in))
+func (s *AuthServer) Register(ctx context.Context, in *auth.RegisterRequest) (*auth.RegisterResponse, error) {
+	resp, err := s.service.Register(ctx, model.UserFromRegisterRequest(in))
 	if err != nil {
 		return nil, err.Grpc()
 	}
-	return resp.Grpc(), nil
+	return resp.RegisterResponse(), nil
 }
 
-func (s *AuthServer) Login(ctx context.Context, in *auth.User) (*auth.AuthResponse, error) {
-	resp, err := s.service.Login(ctx, model.NewUserFromGrpc(in))
+func (s *AuthServer) Login(ctx context.Context, in *auth.LoginRequest) (*auth.LoginResponse, error) {
+	resp, err := s.service.Login(ctx, model.UserFromLoginRequest(in))
 	if err != nil {
 		return nil, err.Grpc()
 	}
-	return resp.Grpc(), nil
+	return resp.LoginResponse(), nil
 }
 
 var runningServers []*grpc.Server

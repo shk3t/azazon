@@ -6,20 +6,22 @@ import (
 	"google.golang.org/grpc/codes"
 )
 
+type decodedRegisterResponse struct {
+	Login string
+}
+
 var registerTestCases = []struct {
-	payload    *auth.User
-	response   *auth.AuthResponse
+	payload    *auth.RegisterRequest
+	response   decodedRegisterResponse
 	statusCode codes.Code
 }{
 	{
-		payload: &auth.User{
+		payload: &auth.RegisterRequest{
 			Login:    "man",
 			Password: "somepassword",
 		},
-		response: &auth.AuthResponse{
-			User: &auth.User{
-				Login: "man",
-			},
+		response: decodedRegisterResponse{
+			Login: "man",
 		},
 		statusCode: codes.OK,
 	},

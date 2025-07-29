@@ -37,7 +37,7 @@ func LoadEnv(envPath string) error {
 	return nil
 }
 
-const ServiceName = "AUTH"
+const AppName = "AUTH"
 
 type envFields struct {
 	Port      int
@@ -55,5 +55,5 @@ type dbConfig struct {
 }
 
 func getenv(varName string) string {
-	return os.Getenv(fmt.Sprintf("%s_%s", ServiceName, varName))
+	return os.Getenv(fmt.Sprintf("%s_%s", AppName, varName))
 }
