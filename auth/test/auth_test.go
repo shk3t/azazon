@@ -6,7 +6,7 @@ import (
 	"auth/internal/setup"
 	"base/api/auth"
 	errpkg "base/pkg/errors"
-	"base/pkg/log"
+	logpkg "base/pkg/log"
 	baseSetup "base/pkg/setup"
 	"base/pkg/sugar"
 	"context"
@@ -27,25 +27,26 @@ func TestMain(m *testing.M) {
 	os.Setenv(config.AppName+"_PORT", "17071")
 
 	err := setup.InitAll("../../.env", workDir)
+	logger := logpkg.Loggers.Test
 	if err != nil {
-		if log.TLog != nil {
-			log.TLog(err)
+		if logger != nil {
+			logger.Println(err)
 		}
 		setup.GracefullExit(1)
 	}
 
 	grpcUrl = fmt.Sprintf("localhost:%d", config.Env.Port)
-	cmd, err := baseSetup.ServerUp(workDir, grpcUrl, log.TLog)
+	cmd, err := baseSetup.ServerUp(workDir, grpcUrl, logpkg.Loggers.Test)
 	if err != nil {
-		baseSetup.ServerDown(cmd, log.TLog)
-		log.TLog(err)
+		baseSetup.ServerDown(cmd, logpkg.Loggers.Test)
+		logger.Println(err)
 		setup.GracefullExit(1)
 	}
 
-	log.TLog("Running tests...")
+	logger.Println("Running tests...")
 	exitCode := m.Run()
-	log.TLog("Test run finished")
-	baseSetup.ServerDown(cmd, log.TLog)
+	logger.Println("Test run finished")
+	baseSetup.ServerDown(cmd, logpkg.Loggers.Test)
 	setup.GracefullExit(exitCode)
 }
 

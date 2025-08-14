@@ -20,11 +20,12 @@ func LoadEnv(envPath string) error {
 	Env = envFields{
 		Port: sugar.Default(strconv.Atoi(getenv("PORT"))),
 		Db: dbConfig{
-			User:     getenv("DB_USER"),
-			Password: getenv("DB_PASSWORD"),
-			Host:     getenv("DB_HOST"),
-			Port:     sugar.Default(strconv.Atoi(getenv("DB_PORT"))),
-			Name:     getenv("DB_NAME"),
+			User:        getenv("DB_USER"),
+			Password:    getenv("DB_PASSWORD"),
+			Host:        getenv("DB_HOST"),
+			Port:        sugar.Default(strconv.Atoi(getenv("DB_PORT"))),
+			Name:        getenv("DB_NAME"),
+			SchemaReset: sugar.Default(strconv.ParseBool(getenv("DB_SCHEMA_RESET"))),
 		},
 		SecretKey: getenv("SECRET_KEY"),
 		Test:      sugar.Default(strconv.ParseBool(getenv("TEST"))),
@@ -47,11 +48,12 @@ type envFields struct {
 }
 
 type dbConfig struct {
-	User     string
-	Password string
-	Host     string
-	Port     int
-	Name     string
+	User        string
+	Password    string
+	Host        string
+	Port        int
+	Name        string
+	SchemaReset bool
 }
 
 func getenv(varName string) string {

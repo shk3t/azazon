@@ -14,16 +14,16 @@ func ConnectDatabase() error {
 	ctx := context.Background()
 	db := config.Env.Db
 
-	databaseUrl := fmt.Sprintf(
+	dbUrl := fmt.Sprintf(
 		"postgres://%s:%s@%s:%d/%s",
 		db.User, db.Password, db.Host, db.Port, db.Name,
 	)
 
 	var err error
-	ConnPool, err = pgxpool.New(ctx, databaseUrl)
+	ConnPool, err = pgxpool.New(ctx, dbUrl)
 	if err != nil {
 		return err
 	}
 
-	return InitDatabaseSchema(ctx)
+	return InitDatabaseSchema(ctx, dbUrl)
 }

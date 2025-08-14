@@ -2,37 +2,41 @@ package database
 
 import (
 	"auth/internal/config"
+	"bytes"
 	"context"
+	"errors"
 	"fmt"
-
-	"github.com/jackc/pgx/v5"
+	"os/exec"
 )
 
-var tableDefinitions = [...]string{
-	`
-    CREATE TABLE IF NOT EXISTS "user" (
-        id SERIAL PRIMARY KEY,
-        login VARCHAR(64) NOT NULL UNIQUE,
-        password_hash VARCHAR(128) NOT NULL
-    )`,
+func InitDatabaseSchema(ctx context.Context, dbUrl string) error {
+	if !(config.Env.Db.SchemaReset || config.Env.Test) {
+		return nil
+	}
+
+	ConnPool.Exec(ctx, "DROP SCHEMA IF EXISTS public CASCADE")
+	ConnPool.Exec(ctx, "CREATE SCHEMA public")
+
+	err := runPsqlScript(dbUrl, "./migrations/init.sql")
+	if err != nil {
+		return fmt.Errorf("Schema initialization failed: %w", err)
+	}
+
+	return nil
 }
 
-func InitDatabaseSchema(ctx context.Context) error {
-	tx, _ := ConnPool.BeginTx(ctx, pgx.TxOptions{})
-	defer tx.Rollback(ctx)
+func runPsqlScript(connString, scriptPath string) error {
+	cmd := exec.Command("psql", connString, "-f", scriptPath)
 
-	if config.Env.Test {
-		tx.Exec(ctx, "DROP SCHEMA IF EXISTS public CASCADE")
-		tx.Exec(ctx, "CREATE SCHEMA public")
+	var stderrBuf bytes.Buffer
+	cmd.Stderr = &stderrBuf
+
+	err := cmd.Run()
+
+	stderrStr := stderrBuf.String()
+	if stderrStr != "" {
+		return errors.New(stderrStr)
 	}
 
-	for _, tableDef := range tableDefinitions {
-		_, err := tx.Exec(ctx, tableDef)
-		if err != nil {
-			return fmt.Errorf("Schema initiation failed: %w", err)
-		}
-	}
-
-	tx.Commit(ctx)
-	return nil
+	return err
 }
