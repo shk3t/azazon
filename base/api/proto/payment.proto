@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package payment;
+
+option go_package = "base/internal/api/payment";
+
+service PaymentService {
+    rpc StartOrderPayment(StartOrderPaymentRequest) returns (StartOrderPaymentResponse);
+    rpc CancelOrderPayment(CancelOrderPaymentRequest) returns (CancelOrderPaymentResponse);
+}
+
+message StartOrderPaymentRequest {
+    string token = 1;
+    int64 order_id = 2;
+    int64 full_price = 3;
+}
+
+message StartOrderPaymentResponse {}
+
+message CancelOrderPaymentRequest {
+    string token = 1;
+    int64 order_id = 2;
+}
+
+message CancelOrderPaymentResponse {}
