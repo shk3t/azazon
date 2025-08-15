@@ -7,9 +7,10 @@ import (
 	"errors"
 	"fmt"
 	"os/exec"
+	"path/filepath"
 )
 
-func InitDatabaseSchema(ctx context.Context, dbUrl string) error {
+func InitDatabaseSchema(ctx context.Context, workDir string, dbUrl string) error {
 	if !(config.Env.Db.SchemaReset || config.Env.Test) {
 		return nil
 	}
@@ -17,7 +18,8 @@ func InitDatabaseSchema(ctx context.Context, dbUrl string) error {
 	ConnPool.Exec(ctx, "DROP SCHEMA IF EXISTS public CASCADE")
 	ConnPool.Exec(ctx, "CREATE SCHEMA public")
 
-	err := runPsqlScript(dbUrl, "./migrations/init.sql")
+	schemaFile := filepath.Join(workDir, "migrations", "init.sql")
+	err := runPsqlScript(dbUrl, schemaFile)
 	if err != nil {
 		return fmt.Errorf("Schema initialization failed: %w", err)
 	}

@@ -1,7 +1,9 @@
 package grpcutil
 
 import (
+	"base/pkg/log"
 	"fmt"
+	"net/http"
 
 	"google.golang.org/grpc/status"
 )
@@ -13,6 +15,11 @@ type HandlerError struct {
 
 func NewError(code int, msg string) *HandlerError {
 	return &HandlerError{HttpCode: code, Message: msg}
+}
+
+func NewInternalError(err error) *HandlerError {
+	log.Loggers.Debug.Println(err)
+	return &HandlerError{HttpCode: http.StatusInternalServerError, Message: ""}
 }
 
 func (err HandlerError) Error() string {

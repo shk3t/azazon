@@ -4,6 +4,7 @@ import (
 	"base/pkg/sugar"
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"strconv"
 
@@ -12,7 +13,8 @@ import (
 
 var Env envFields
 
-func LoadEnv(envPath string) error {
+func LoadEnv(workDir string) error {
+	envPath := filepath.Join(workDir, "..", ".env")
 	if err := godotenv.Load(envPath); err != nil {
 		return fmt.Errorf("Error loading .env file:\n\t%w", err)
 	}
@@ -28,6 +30,7 @@ func LoadEnv(envPath string) error {
 			SchemaReset: sugar.Default(strconv.ParseBool(getenv("DB_SCHEMA_RESET"))),
 		},
 		SecretKey: getenv("SECRET_KEY"),
+		AdminKey:  getenv("ADMIN_KEY"),
 		Test:      sugar.Default(strconv.ParseBool(getenv("TEST"))),
 	}
 
@@ -44,6 +47,7 @@ type envFields struct {
 	Port      int
 	Db        dbConfig
 	SecretKey string
+	AdminKey  string
 	Test      bool
 }
 

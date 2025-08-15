@@ -17,7 +17,6 @@ type Item struct {
 type OrderStatus int
 
 const (
-	Unknown OrderStatus = iota
-	Confirmed
+	Confirmed OrderStatus = iota + 1
 	Cancelled
 )

@@ -17,13 +17,10 @@ var Loggers = struct {
 var fileLoggers = map[string]**log.Logger{
 	"debug.log":   &Loggers.Debug,
 	"request.log": &Loggers.Request,
-	"test.log":    &Loggers.Test,
 }
 
 var (
-	DLog func(...any)
-	TLog func(...any)
-	RLog func(...any)
+	Debug func(...any)
 )
 
 func Init(workDir string) error {
@@ -47,10 +44,8 @@ func Init(workDir string) error {
 	}
 
 	Loggers.Run = log.New(os.Stdout, "", log.LstdFlags|log.Lshortfile)
-
-	DLog = Loggers.Debug.Println
-	TLog = Loggers.Test.Println
-	RLog = Loggers.Run.Println
+	Loggers.Test = log.New(os.Stderr, "", log.LstdFlags|log.Lshortfile)
+	Debug = Loggers.Debug.Println
 
 	return nil
 }

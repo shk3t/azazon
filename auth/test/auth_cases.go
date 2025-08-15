@@ -25,6 +25,14 @@ var registerTestCases = []struct {
 		},
 		statusCode: codes.OK,
 	},
+	{
+		request: &model.User{
+			Login:    "shortman",
+			Password: "short",
+		},
+		response:   decodedAuthResponse{},
+		statusCode: codes.InvalidArgument,
+	},
 }
 
 var loginTestCases = []struct {
@@ -41,13 +49,32 @@ var loginTestCases = []struct {
 }
 
 var validateTokenTestCases = []struct {
-	request    *model.User
+	registerRequest *model.User
+	statusCode      codes.Code
+}{
+	{
+		registerRequest: &model.User{
+			Login:    "man3",
+			Password: "somepassword3",
+		},
+		statusCode: codes.OK,
+	},
+}
+
+var updateUserTestCases = []struct {
+	oldUser    *model.User
+	newUser    *model.User
 	statusCode codes.Code
 }{
 	{
-		request: &model.User{
-			Login:    "man3",
-			Password: "somepassword3",
+		oldUser: &model.User{
+			Login:    "man4",
+			Password: "somepassword4",
+		},
+		newUser: &model.User{
+			Login:    "newman4",
+			Password: "newpassword4",
+			Role:     model.UserRoles.Admin,
 		},
 		statusCode: codes.OK,
 	},

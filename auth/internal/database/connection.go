@@ -10,7 +10,7 @@ import (
 
 var ConnPool *pgxpool.Pool
 
-func ConnectDatabase() error {
+func ConnectDatabase(workDir string) error {
 	ctx := context.Background()
 	db := config.Env.Db
 
@@ -25,5 +25,5 @@ func ConnectDatabase() error {
 		return err
 	}
 
-	return InitDatabaseSchema(ctx, dbUrl)
+	return InitDatabaseSchema(ctx, workDir, dbUrl)
 }

@@ -2,10 +2,13 @@ package setup
 
 import (
 	"base/api/auth"
+	"bytes"
 	"context"
 	"fmt"
+	"log"
 	"os"
 	"os/exec"
+	"strings"
 	"time"
 
 	"google.golang.org/grpc"
@@ -28,24 +31,45 @@ func GetClient(url string) (
 	return client, conn.Close, nil
 }
 
-func ServerUp(workDir string, url string, doLog func(...any)) (*exec.Cmd, error) {
-	doLog(fmt.Sprintf("Starting server in `%s` dir...", workDir))
+func ServerUp(workDir string, url string, logger *log.Logger) (*exec.Cmd, error) {
+	port := strings.Split(url, ":")[1]
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	cmd := exec.CommandContext(ctx, "go", "build", "-o", "build/auth", "cmd/main.go")
+
+	var stdoutBuf bytes.Buffer
+	cmd := exec.CommandContext(
+		ctx, "bash", "-c",
+		"ss -tuln | tr -s ' ' | cut -d ' ' -f 5 | grep "+port,
+	)
+	cmd.Stdout = &stdoutBuf
+	cmd.Run()
+	if stdoutBuf.String() != "" {
+		logger.Printf("%s port is already occupied. Killing previously run server...", port)
+		err := exec.CommandContext(
+			ctx, "bash", "-c",
+			fmt.Sprintf("kill $(lsof -i :%s -t)", port),
+		).Run()
+		if err != nil {
+			return nil, fmt.Errorf("Unable to kill process: %w", err)
+		}
+	}
+
+	cmd = exec.CommandContext(ctx, "go", "build", "-o", "build/auth", "cmd/main.go")
 	cmd.Dir = workDir
 	if err := cmd.Start(); err != nil {
-		return cmd, fmt.Errorf("Failed to start server building: %w", err)
+		return nil, fmt.Errorf("Failed to start server building: %w", err)
 	}
 	if err := cmd.Wait(); err != nil {
-		return cmd, fmt.Errorf("Failed to build server: %w", err)
+		return nil, fmt.Errorf("Failed to build server: %w", err)
 	}
+
+	logger.Printf("Starting server in `%s` dir...\n", workDir)
 
 	cmd = exec.Command("./build/auth")
 	cmd.Dir = workDir
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
+	cmd.Stdout = logger.Writer()
+	cmd.Stderr = logger.Writer()
 
 	if err := cmd.Start(); err != nil {
 		return cmd, fmt.Errorf("Failed to start server: %w", err)
@@ -55,7 +79,7 @@ func ServerUp(workDir string, url string, doLog func(...any)) (*exec.Cmd, error)
 		return cmd, err
 	}
 
-	doLog("Server started successfully")
+	logger.Println("Server started successfully")
 	return cmd, nil
 }
 
@@ -81,13 +105,13 @@ func WaitForServerReady(url string, timeout time.Duration) error {
 	}
 }
 
-func ServerDown(cmd *exec.Cmd, doLog func(...any)) {
+func ServerDown(cmd *exec.Cmd, logger *log.Logger) {
 	if cmd == nil || cmd.Process == nil {
-		doLog("Error: Process is nil")
+		logger.Println("Error: Process is nil")
 		return
 	}
 
-	doLog("Stopping server...")
+	logger.Println("Stopping server...")
 
 	if err := cmd.Process.Signal(os.Interrupt); err != nil {
 		fmt.Printf("Error sending interrupt: %v\n", err)
@@ -99,12 +123,12 @@ func ServerDown(cmd *exec.Cmd, doLog func(...any)) {
 	select {
 	case err := <-done:
 		if err != nil {
-			doLog(fmt.Sprintf("Server stopped: %v\n", err))
+			logger.Printf("Server stopped: %v\n", err)
 		} else {
-			doLog("Server stopped gracefully")
+			logger.Println("Server stopped gracefully")
 		}
 	case <-time.After(5 * time.Second):
 		cmd.Process.Kill()
-		doLog("Server force killed after timeout")
+		logger.Println("Server force killed after timeout")
 	}
 }

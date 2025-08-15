@@ -9,14 +9,14 @@ import (
 	"os"
 )
 
-func initAll(envPath string, workDir string) error {
-	if err := config.LoadEnv(envPath); err != nil {
+func initAll(workDir string) error {
+	if err := config.LoadEnv(workDir); err != nil {
 		return err
 	}
 	if err := log.Init(workDir); err != nil {
 		return err
 	}
-	if err := database.ConnectDatabase(); err != nil {
+	if err := database.ConnectDatabase(workDir); err != nil {
 		return err
 	}
 
@@ -31,12 +31,12 @@ func deinitAll() {
 
 var initializer = baseSetup.NewInitializer(
 	func(args ...any) error {
-		return initAll(args[0].(string), args[1].(string))
+		return initAll(args[0].(string))
 	},
 	deinitAll,
 )
-var InitAll = func(envPath string, workDir string) error {
-	return initializer.Init(envPath, workDir)
+var InitAll = func(workDir string) error {
+	return initializer.Init(workDir)
 }
 var DeinitAll = initializer.Deinit
 

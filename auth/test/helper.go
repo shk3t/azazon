@@ -31,7 +31,7 @@ func requireOk(t *testing.T, ok bool, err error) {
 	}
 }
 
-func requireNotNil(t *testing.T, value any, info string) {
+func requireNotNil[V any](t *testing.T, value *V, info string) {
 	if value == nil {
 		t.Fatalf(
 			"%s is <nil>",

@@ -2,11 +2,12 @@ package authtest
 
 import (
 	"auth/internal/config"
-	"auth/internal/service"
 	"auth/internal/setup"
 	"base/api/auth"
 	errpkg "base/pkg/errors"
-	logpkg "base/pkg/log"
+	"base/pkg/log"
+	"base/pkg/model"
+	"base/pkg/service"
 	baseSetup "base/pkg/setup"
 	"base/pkg/sugar"
 	"context"
@@ -26,19 +27,17 @@ func TestMain(m *testing.M) {
 	os.Setenv(config.AppName+"_TEST", "true")
 	os.Setenv(config.AppName+"_PORT", "17071")
 
-	err := setup.InitAll("../../.env", workDir)
-	logger := logpkg.Loggers.Test
+	err := setup.InitAll(workDir)
 	if err != nil {
-		if logger != nil {
-			logger.Println(err)
-		}
-		setup.GracefullExit(1)
+		setup.DeinitAll()
+		panic(err)
 	}
+	logger := log.Loggers.Test
 
 	grpcUrl = fmt.Sprintf("localhost:%d", config.Env.Port)
-	cmd, err := baseSetup.ServerUp(workDir, grpcUrl, logpkg.Loggers.Test)
+	cmd, err := baseSetup.ServerUp(workDir, grpcUrl, logger)
 	if err != nil {
-		baseSetup.ServerDown(cmd, logpkg.Loggers.Test)
+		baseSetup.ServerDown(cmd, logger)
 		logger.Println(err)
 		setup.GracefullExit(1)
 	}
@@ -46,7 +45,7 @@ func TestMain(m *testing.M) {
 	logger.Println("Running tests...")
 	exitCode := m.Run()
 	logger.Println("Test run finished")
-	baseSetup.ServerDown(cmd, logpkg.Loggers.Test)
+	baseSetup.ServerDown(cmd, logger)
 	setup.GracefullExit(exitCode)
 }
 
@@ -57,7 +56,7 @@ func TestRegister(t *testing.T) {
 	for _, testCase := range registerTestCases {
 		ctx := context.Background()
 
-		out, err := client.Register(ctx, &auth.RegisterRequest{
+		resp, err := client.Register(ctx, &auth.RegisterRequest{
 			Login:    testCase.request.Login,
 			Password: testCase.request.Password,
 		})
@@ -69,7 +68,7 @@ func TestRegister(t *testing.T) {
 			continue
 		}
 
-		claims, err := service.ParseJwtToken(out.Token)
+		claims, err := service.ParseJwtToken(resp.Token)
 		requireNoError(t, err)
 
 		assertEqual(t, claims.Login, testCase.response.Login, "user login")
@@ -107,19 +106,68 @@ func TestValidateToken(t *testing.T) {
 	for _, testCase := range validateTokenTestCases {
 		ctx := context.Background()
 
-		outR, _ := client.Register(ctx, &auth.RegisterRequest{
-			Login:    testCase.request.Login,
-			Password: testCase.request.Password,
+		respReg, _ := client.Register(ctx, &auth.RegisterRequest{
+			Login:    testCase.registerRequest.Login,
+			Password: testCase.registerRequest.Password,
 		})
-		requireNotNil(t, outR, "response")
+		requireNotNil(t, respReg, "response")
 
-		outV, err := client.ValidateToken(ctx, &auth.ValidateTokenRequest{
-			Token: outR.Token,
+		resp, err := client.ValidateToken(ctx, &auth.ValidateTokenRequest{
+			Token: respReg.Token,
 		})
 		st, ok := status.FromError(err)
 		requireOk(t, ok, err)
-		requireOk(t, outV.Valid, errpkg.InvalidToken)
+		requireOk(t, resp.Valid, errpkg.InvalidToken)
 
 		assertEqual(t, st.Code(), testCase.statusCode, "status code")
+	}
+}
+
+func TestUpdateUser(t *testing.T) {
+	client, closeConn, _ := baseSetup.GetClient(grpcUrl)
+	defer closeConn()
+
+	for _, testCase := range updateUserTestCases {
+		ctx := context.Background()
+
+		respReg, _ := client.Register(ctx, &auth.RegisterRequest{
+			Login:    testCase.oldUser.Login,
+			Password: testCase.oldUser.Password,
+		})
+		requireNotNil(t, respReg, "response")
+
+		resp, err := client.UpdateUser(ctx, &auth.UpdateUserRequest{
+			Token:       respReg.Token,
+			NewLogin:    testCase.newUser.Login,
+			NewPassword: testCase.newUser.Password,
+			RoleKey: sugar.If(
+				testCase.newUser.Role == model.UserRoles.Admin,
+				&config.Env.AdminKey,
+				nil,
+			),
+		})
+		st, ok := status.FromError(err)
+		requireOk(t, ok, err)
+		assertEqual(t, st.Code(), testCase.statusCode, "UpdateUser status code")
+		if st.Code() != codes.OK {
+			continue
+		}
+
+		claims, err := service.ParseJwtToken(resp.Token)
+		requireNoError(t, err)
+		assertEqual(t, claims.Login, testCase.newUser.Login, "UpdateUser user login")
+		assertEqual(t, claims.Role, testCase.newUser.Role, "UpdateUser user role")
+
+		respLog, err := client.Login(ctx, &auth.LoginRequest{
+			Login:    testCase.newUser.Login,
+			Password: testCase.newUser.Password,
+		})
+		st, ok = status.FromError(err)
+		requireOk(t, ok, err)
+
+		claims, err = service.ParseJwtToken(respLog.Token)
+		requireNoError(t, err)
+		assertEqual(t, claims.Login, testCase.newUser.Login, "Login user login")
+		assertEqual(t, claims.Role, testCase.newUser.Role, "Login user role")
 	}
 }

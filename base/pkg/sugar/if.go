@@ -8,6 +8,14 @@ func Default[T any](value T, err error) T {
 	return value
 }
 
+func Value[T any](pointer *T) T {
+	var defaultValue T
+	if pointer == nil {
+		return defaultValue
+	}
+	return *pointer
+}
+
 func And[T comparable](a T, b T) T {
 	var defaultValue T
 	if a == defaultValue {

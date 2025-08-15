@@ -5,7 +5,7 @@ import (
 	"auth/internal/interceptor"
 	"auth/internal/server"
 	"auth/internal/setup"
-	logpkg "base/pkg/log"
+	"base/pkg/log"
 	"base/pkg/sugar"
 	"net"
 	"os"
@@ -15,12 +15,12 @@ import (
 )
 
 func main() {
-	err := setup.InitAll("../.env", sugar.Default(os.Getwd()))
+	err := setup.InitAll(sugar.Default(os.Getwd()))
 	if err != nil {
 		panic(err)
 	}
 
-	logger := logpkg.Loggers.Run
+	logger := log.Loggers.Run
 
 	lis, err := net.Listen("tcp", ":"+strconv.Itoa(config.Env.Port))
 	if err != nil {

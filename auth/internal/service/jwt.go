@@ -8,16 +8,11 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-type authClaims struct {
-	UserId int
-	Login  string
-	jwt.RegisteredClaims
-}
-
 func createJwtToken(user model.User) (string, error) {
-	claims := authClaims{
+	claims := model.AuthClaims{
 		UserId: user.Id,
 		Login:  user.Login,
+		Role:   user.Role,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(30 * 24 * time.Hour)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
@@ -29,22 +24,15 @@ func createJwtToken(user model.User) (string, error) {
 	return token.SignedString([]byte(config.Env.SecretKey))
 }
 
-func validateJwtToken(token string) bool {
+func validateJwtToken(token string) error {
 	_, err := jwt.ParseWithClaims(
 		token,
-		&authClaims{},
+		&model.AuthClaims{},
 		func(*jwt.Token) (any, error) {
 			return []byte(config.Env.SecretKey), nil
 		},
 		jwt.WithValidMethods([]string{"HS256"}),
 		jwt.WithIssuer(config.AppName),
 	)
-
-	return err == nil
-}
-
-func ParseJwtToken(token string) (*authClaims, error) {
-	claims := &authClaims{}
-	_, _, err := jwt.NewParser().ParseUnverified(token, claims)
-	return claims, err
+	return err
 }

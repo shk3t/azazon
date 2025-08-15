@@ -92,8 +92,9 @@ func (x *Product) GetQuantity() int64 {
 type SaveProductRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Token         string                 `protobuf:"bytes,1,opt,name=token,proto3" json:"token,omitempty"`
-	ProductName   string                 `protobuf:"bytes,2,opt,name=product_name,json=productName,proto3" json:"product_name,omitempty"`
-	ProductPrice  int64                  `protobuf:"varint,3,opt,name=product_price,json=productPrice,proto3" json:"product_price,omitempty"`
+	ProductId     *int64                 `protobuf:"varint,2,opt,name=product_id,json=productId,proto3,oneof" json:"product_id,omitempty"`
+	ProductName   string                 `protobuf:"bytes,3,opt,name=product_name,json=productName,proto3" json:"product_name,omitempty"`
+	ProductPrice  int64                  `protobuf:"varint,4,opt,name=product_price,json=productPrice,proto3" json:"product_price,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -133,6 +134,13 @@ func (x *SaveProductRequest) GetToken() string {
 		return x.Token
 	}
 	return ""
+}
+
+func (x *SaveProductRequest) GetProductId() int64 {
+	if x != nil && x.ProductId != nil {
+		return *x.ProductId
+	}
+	return 0
 }
 
 func (x *SaveProductRequest) GetProductName() string {
@@ -393,6 +401,94 @@ func (x *GetProductInfoResponse) GetProduct() *Product {
 	return nil
 }
 
+type DeleteProductRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Token         string                 `protobuf:"bytes,1,opt,name=token,proto3" json:"token,omitempty"`
+	ProductId     int64                  `protobuf:"varint,2,opt,name=product_id,json=productId,proto3" json:"product_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteProductRequest) Reset() {
+	*x = DeleteProductRequest{}
+	mi := &file_stock_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteProductRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteProductRequest) ProtoMessage() {}
+
+func (x *DeleteProductRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_stock_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteProductRequest.ProtoReflect.Descriptor instead.
+func (*DeleteProductRequest) Descriptor() ([]byte, []int) {
+	return file_stock_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *DeleteProductRequest) GetToken() string {
+	if x != nil {
+		return x.Token
+	}
+	return ""
+}
+
+func (x *DeleteProductRequest) GetProductId() int64 {
+	if x != nil {
+		return x.ProductId
+	}
+	return 0
+}
+
+type DeleteProductResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteProductResponse) Reset() {
+	*x = DeleteProductResponse{}
+	mi := &file_stock_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteProductResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteProductResponse) ProtoMessage() {}
+
+func (x *DeleteProductResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_stock_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteProductResponse.ProtoReflect.Descriptor instead.
+func (*DeleteProductResponse) Descriptor() ([]byte, []int) {
+	return file_stock_proto_rawDescGZIP(), []int{8}
+}
+
 var File_stock_proto protoreflect.FileDescriptor
 
 const file_stock_proto_rawDesc = "" +
@@ -402,11 +498,14 @@ const file_stock_proto_rawDesc = "" +
 	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x14\n" +
 	"\x05price\x18\x03 \x01(\x03R\x05price\x12\x1a\n" +
-	"\bquantity\x18\x04 \x01(\x03R\bquantity\"r\n" +
+	"\bquantity\x18\x04 \x01(\x03R\bquantity\"\xa5\x01\n" +
 	"\x12SaveProductRequest\x12\x14\n" +
-	"\x05token\x18\x01 \x01(\tR\x05token\x12!\n" +
-	"\fproduct_name\x18\x02 \x01(\tR\vproductName\x12#\n" +
-	"\rproduct_price\x18\x03 \x01(\x03R\fproductPrice\"?\n" +
+	"\x05token\x18\x01 \x01(\tR\x05token\x12\"\n" +
+	"\n" +
+	"product_id\x18\x02 \x01(\x03H\x00R\tproductId\x88\x01\x01\x12!\n" +
+	"\fproduct_name\x18\x03 \x01(\tR\vproductName\x12#\n" +
+	"\rproduct_price\x18\x04 \x01(\x03R\fproductPriceB\r\n" +
+	"\v_product_id\"?\n" +
 	"\x13SaveProductResponse\x12(\n" +
 	"\aproduct\x18\x01 \x01(\v2\x0e.stock.ProductR\aproduct\"|\n" +
 	"\x1eIncreaseProductQuantityRequest\x12\x14\n" +
@@ -421,11 +520,17 @@ const file_stock_proto_rawDesc = "" +
 	"\n" +
 	"product_id\x18\x02 \x01(\x03R\tproductId\"B\n" +
 	"\x16GetProductInfoResponse\x12(\n" +
-	"\aproduct\x18\x01 \x01(\v2\x0e.stock.ProductR\aproduct2\x8d\x02\n" +
+	"\aproduct\x18\x01 \x01(\v2\x0e.stock.ProductR\aproduct\"K\n" +
+	"\x14DeleteProductRequest\x12\x14\n" +
+	"\x05token\x18\x01 \x01(\tR\x05token\x12\x1d\n" +
+	"\n" +
+	"product_id\x18\x02 \x01(\x03R\tproductId\"\x17\n" +
+	"\x15DeleteProductResponse2\xd9\x02\n" +
 	"\fStockService\x12D\n" +
 	"\vSaveProduct\x12\x19.stock.SaveProductRequest\x1a\x1a.stock.SaveProductResponse\x12h\n" +
 	"\x17IncreaseProductQuantity\x12%.stock.IncreaseProductQuantityRequest\x1a&.stock.IncreaseProductQuantityResponse\x12M\n" +
-	"\x0eGetProductInfo\x12\x1c.stock.GetProductInfoRequest\x1a\x1d.stock.GetProductInfoResponseB\x19Z\x17base/internal/api/stockb\x06proto3"
+	"\x0eGetProductInfo\x12\x1c.stock.GetProductInfoRequest\x1a\x1d.stock.GetProductInfoResponse\x12J\n" +
+	"\rDeleteProduct\x12\x1b.stock.DeleteProductRequest\x1a\x1c.stock.DeleteProductResponseB\x19Z\x17base/internal/api/stockb\x06proto3"
 
 var (
 	file_stock_proto_rawDescOnce sync.Once
@@ -439,7 +544,7 @@ func file_stock_proto_rawDescGZIP() []byte {
 	return file_stock_proto_rawDescData
 }
 
-var file_stock_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
+var file_stock_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
 var file_stock_proto_goTypes = []any{
 	(*Product)(nil),                         // 0: stock.Product
 	(*SaveProductRequest)(nil),              // 1: stock.SaveProductRequest
@@ -448,6 +553,8 @@ var file_stock_proto_goTypes = []any{
 	(*IncreaseProductQuantityResponse)(nil), // 4: stock.IncreaseProductQuantityResponse
 	(*GetProductInfoRequest)(nil),           // 5: stock.GetProductInfoRequest
 	(*GetProductInfoResponse)(nil),          // 6: stock.GetProductInfoResponse
+	(*DeleteProductRequest)(nil),            // 7: stock.DeleteProductRequest
+	(*DeleteProductResponse)(nil),           // 8: stock.DeleteProductResponse
 }
 var file_stock_proto_depIdxs = []int32{
 	0, // 0: stock.SaveProductResponse.product:type_name -> stock.Product
@@ -456,11 +563,13 @@ var file_stock_proto_depIdxs = []int32{
 	1, // 3: stock.StockService.SaveProduct:input_type -> stock.SaveProductRequest
 	3, // 4: stock.StockService.IncreaseProductQuantity:input_type -> stock.IncreaseProductQuantityRequest
 	5, // 5: stock.StockService.GetProductInfo:input_type -> stock.GetProductInfoRequest
-	2, // 6: stock.StockService.SaveProduct:output_type -> stock.SaveProductResponse
-	4, // 7: stock.StockService.IncreaseProductQuantity:output_type -> stock.IncreaseProductQuantityResponse
-	6, // 8: stock.StockService.GetProductInfo:output_type -> stock.GetProductInfoResponse
-	6, // [6:9] is the sub-list for method output_type
-	3, // [3:6] is the sub-list for method input_type
+	7, // 6: stock.StockService.DeleteProduct:input_type -> stock.DeleteProductRequest
+	2, // 7: stock.StockService.SaveProduct:output_type -> stock.SaveProductResponse
+	4, // 8: stock.StockService.IncreaseProductQuantity:output_type -> stock.IncreaseProductQuantityResponse
+	6, // 9: stock.StockService.GetProductInfo:output_type -> stock.GetProductInfoResponse
+	8, // 10: stock.StockService.DeleteProduct:output_type -> stock.DeleteProductResponse
+	7, // [7:11] is the sub-list for method output_type
+	3, // [3:7] is the sub-list for method input_type
 	3, // [3:3] is the sub-list for extension type_name
 	3, // [3:3] is the sub-list for extension extendee
 	0, // [0:3] is the sub-list for field type_name
@@ -471,13 +580,14 @@ func file_stock_proto_init() {
 	if File_stock_proto != nil {
 		return
 	}
+	file_stock_proto_msgTypes[1].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_stock_proto_rawDesc), len(file_stock_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   7,
+			NumMessages:   9,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

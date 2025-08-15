@@ -12,6 +12,8 @@ func HttpToGrpcStatus(code int) codes.Code {
 		return codes.InvalidArgument
 	case http.StatusUnauthorized:
 		return codes.Unauthenticated
+	case http.StatusNotFound:
+		return codes.NotFound
 	case http.StatusInternalServerError:
 		return codes.Internal
 	default:
