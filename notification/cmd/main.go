@@ -1,13 +1,13 @@
 package main
 
 import (
-	"auth/internal/config"
-	"auth/internal/server"
-	"auth/internal/setup"
 	"base/pkg/interceptor"
 	"base/pkg/log"
 	"base/pkg/sugar"
 	"net"
+	"notification/internal/config"
+	"notification/internal/server"
+	"notification/internal/setup"
 	"os"
 	"strconv"
 
@@ -27,7 +27,7 @@ func main() {
 		panic(err)
 	}
 
-	srv := server.CreateAuthServer(
+	srv := server.CreateNotificationServer(
 		grpc.ChainUnaryInterceptor(interceptor.LoggingUnaryInterceptor),
 	)
 

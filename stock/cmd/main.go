@@ -1,14 +1,14 @@
 package main
 
 import (
-	"auth/internal/config"
-	"auth/internal/server"
-	"auth/internal/setup"
 	"base/pkg/interceptor"
 	"base/pkg/log"
 	"base/pkg/sugar"
 	"net"
 	"os"
+	"stock/internal/config"
+	"stock/internal/server"
+	"stock/internal/setup"
 	"strconv"
 
 	"google.golang.org/grpc"
@@ -27,7 +27,7 @@ func main() {
 		panic(err)
 	}
 
-	srv := server.CreateAuthServer(
+	srv := server.CreateStockServer(
 		grpc.ChainUnaryInterceptor(interceptor.LoggingUnaryInterceptor),
 	)
 
