@@ -20,7 +20,9 @@ func LoadEnv(workDir string) error {
 	}
 
 	Env = envFields{
-		Port: sugar.Default(strconv.Atoi(getenv("PORT"))),
+		Port:     sugar.Default(strconv.Atoi(getenv("PORT"))),
+		TestPort: sugar.Default(strconv.Atoi(getenv("TEST_PORT"))),
+		Test:     sugar.Default(strconv.ParseBool(getenv("TEST"))),
 		Db: dbConfig{
 			User:        getenv("DB_USER"),
 			Password:    getenv("DB_PASSWORD"),
@@ -29,7 +31,6 @@ func LoadEnv(workDir string) error {
 			Name:        getenv("DB_NAME"),
 			SchemaReset: sugar.Default(strconv.ParseBool(getenv("DB_SCHEMA_RESET"))),
 		},
-		Test:      sugar.Default(strconv.ParseBool(getenv("TEST"))),
 	}
 
 	if Env.Test {
@@ -42,9 +43,10 @@ func LoadEnv(workDir string) error {
 const AppName = "ORDER"
 
 type envFields struct {
-	Port      int
-	Db        dbConfig
-	Test      bool
+	Port     int
+	TestPort int
+	Test     bool
+	Db       dbConfig
 }
 
 type dbConfig struct {

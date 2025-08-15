@@ -20,7 +20,9 @@ func LoadEnv(workDir string) error {
 	}
 
 	Env = envFields{
-		Port: sugar.Default(strconv.Atoi(getenv("PORT"))),
+		Port:     sugar.Default(strconv.Atoi(getenv("PORT"))),
+		TestPort: sugar.Default(strconv.Atoi(getenv("TEST_PORT"))),
+		Test:     sugar.Default(strconv.ParseBool(getenv("TEST"))),
 		Db: dbConfig{
 			User:        getenv("DB_USER"),
 			Password:    getenv("DB_PASSWORD"),
@@ -31,7 +33,6 @@ func LoadEnv(workDir string) error {
 		},
 		SecretKey: getenv("SECRET_KEY"),
 		AdminKey:  getenv("ADMIN_KEY"),
-		Test:      sugar.Default(strconv.ParseBool(getenv("TEST"))),
 	}
 
 	if Env.Test {
@@ -45,10 +46,11 @@ const AppName = "AUTH"
 
 type envFields struct {
 	Port      int
+	TestPort  int
+	Test      bool
 	Db        dbConfig
 	SecretKey string
 	AdminKey  string
-	Test      bool
 }
 
 type dbConfig struct {

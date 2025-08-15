@@ -20,18 +20,20 @@ func LoadEnv(workDir string) error {
 	}
 
 	Env = envFields{
-		Port: sugar.Default(strconv.Atoi(getenv("PORT"))),
-		Test:      sugar.Default(strconv.ParseBool(getenv("TEST"))),
+		Port:     sugar.Default(strconv.Atoi(getenv("PORT"))),
+		TestPort: sugar.Default(strconv.Atoi(getenv("TEST_PORT"))),
+		Test:     sugar.Default(strconv.ParseBool(getenv("TEST"))),
 	}
 
 	return nil
 }
 
-const AppName = "ORDER"
+const AppName = "NOTIFICATION"
 
 type envFields struct {
-	Port      int
-	Test      bool
+	Port     int
+	TestPort int
+	Test     bool
 }
 
 func getenv(varName string) string {

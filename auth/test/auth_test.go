@@ -25,7 +25,6 @@ var grpcUrl string
 func TestMain(m *testing.M) {
 	workDir := filepath.Dir(sugar.Default(os.Getwd()))
 	os.Setenv(config.AppName+"_TEST", "true")
-	os.Setenv(config.AppName+"_PORT", "17071")
 
 	err := setup.InitAll(workDir)
 	if err != nil {
@@ -34,7 +33,7 @@ func TestMain(m *testing.M) {
 	}
 	logger := log.Loggers.Test
 
-	grpcUrl = fmt.Sprintf("localhost:%d", config.Env.Port)
+	grpcUrl = fmt.Sprintf("localhost:%d", config.Env.TestPort)
 	cmd, err := baseSetup.ServerUp(workDir, grpcUrl, logger)
 	if err != nil {
 		baseSetup.ServerDown(cmd, logger)
