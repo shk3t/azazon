@@ -16,6 +16,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -49,6 +50,7 @@ func TestMain(m *testing.M) {
 }
 
 func TestRegister(t *testing.T) {
+	require := require.New(t)
 	client, closeConn, _ := baseSetup.GetClient(grpcUrl)
 	defer closeConn()
 
@@ -60,21 +62,22 @@ func TestRegister(t *testing.T) {
 			Password: testCase.request.Password,
 		})
 		st, ok := status.FromError(err)
-		requireOk(t, ok, err)
+		require.True(ok, err)
 
-		assertEqual(t, st.Code(), testCase.statusCode, "status code")
+		require.Equal(testCase.statusCode, st.Code())
 		if st.Code() != codes.OK {
 			continue
 		}
 
 		claims, err := service.ParseJwtToken(resp.Token)
-		requireNoError(t, err)
+		require.NoError(err)
 
-		assertEqual(t, claims.Login, testCase.response.Login, "user login")
+		require.Equal(testCase.response.Login, claims.Login)
 	}
 }
 
 func TestLogin(t *testing.T) {
+	require := require.New(t)
 	client, closeConn, _ := baseSetup.GetClient(grpcUrl)
 	defer closeConn()
 
@@ -92,13 +95,14 @@ func TestLogin(t *testing.T) {
 			Password: testCase.request.Password,
 		})
 		st, ok := status.FromError(err)
-		requireOk(t, ok, err)
+		require.True(ok, err)
 
-		assertEqual(t, st.Code(), testCase.statusCode, "status code")
+		require.Equal(testCase.statusCode, st.Code())
 	}
 }
 
 func TestValidateToken(t *testing.T) {
+	require := require.New(t)
 	client, closeConn, _ := baseSetup.GetClient(grpcUrl)
 	defer closeConn()
 
@@ -109,20 +113,21 @@ func TestValidateToken(t *testing.T) {
 			Login:    testCase.registerRequest.Login,
 			Password: testCase.registerRequest.Password,
 		})
-		requireNotNil(t, respReg, "response")
+		require.NotNil(respReg)
 
 		resp, err := client.ValidateToken(ctx, &auth.ValidateTokenRequest{
 			Token: respReg.Token,
 		})
 		st, ok := status.FromError(err)
-		requireOk(t, ok, err)
-		requireOk(t, resp.Valid, errpkg.InvalidToken)
+		require.True(ok, err)
+		require.True(resp.Valid, errpkg.InvalidToken)
 
-		assertEqual(t, st.Code(), testCase.statusCode, "status code")
+		require.Equal(testCase.statusCode, st.Code())
 	}
 }
 
 func TestUpdateUser(t *testing.T) {
+	require := require.New(t)
 	client, closeConn, _ := baseSetup.GetClient(grpcUrl)
 	defer closeConn()
 
@@ -133,7 +138,7 @@ func TestUpdateUser(t *testing.T) {
 			Login:    testCase.oldUser.Login,
 			Password: testCase.oldUser.Password,
 		})
-		requireNotNil(t, respReg, "response")
+		require.NotNil(respReg)
 
 		resp, err := client.UpdateUser(ctx, &auth.UpdateUserRequest{
 			Token:       respReg.Token,
@@ -146,27 +151,27 @@ func TestUpdateUser(t *testing.T) {
 			),
 		})
 		st, ok := status.FromError(err)
-		requireOk(t, ok, err)
-		assertEqual(t, st.Code(), testCase.statusCode, "UpdateUser status code")
+		require.True(ok, err)
+		require.Equal(testCase.statusCode, st.Code())
 		if st.Code() != codes.OK {
 			continue
 		}
 
 		claims, err := service.ParseJwtToken(resp.Token)
-		requireNoError(t, err)
-		assertEqual(t, claims.Login, testCase.newUser.Login, "UpdateUser user login")
-		assertEqual(t, claims.Role, testCase.newUser.Role, "UpdateUser user role")
+		require.NoError(err)
+		require.Equal(testCase.newUser.Login, claims.Login)
+		require.Equal(testCase.newUser.Role, claims.Role)
 
 		respLog, err := client.Login(ctx, &auth.LoginRequest{
 			Login:    testCase.newUser.Login,
 			Password: testCase.newUser.Password,
 		})
 		st, ok = status.FromError(err)
-		requireOk(t, ok, err)
+		require.True(ok, err)
 
 		claims, err = service.ParseJwtToken(respLog.Token)
-		requireNoError(t, err)
-		assertEqual(t, claims.Login, testCase.newUser.Login, "Login user login")
-		assertEqual(t, claims.Role, testCase.newUser.Role, "Login user role")
+		require.NoError(err)
+		require.Equal(testCase.newUser.Login, claims.Login)
+		require.Equal(testCase.newUser.Role, claims.Role)
 	}
 }
