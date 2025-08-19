@@ -14,9 +14,10 @@ import (
 
 type NotificationServer struct {
 	notification.UnimplementedNotificationServiceServer
-	GrpcServer   *grpc.Server
-	service      service.NotificationService
-	kafkaReaders []*kafka.Reader
+	GrpcServer       *grpc.Server
+	service          service.NotificationService
+	kafkaReaders     []*kafka.Reader
+	readerCancelFunc context.CancelFunc
 }
 
 func NewNotificationServer(serverOpts grpc.ServerOption) *NotificationServer {
@@ -24,7 +25,7 @@ func NewNotificationServer(serverOpts grpc.ServerOption) *NotificationServer {
 		service: *service.NewNotificationService(),
 	}
 
-	srv.kafkaReaders = initKafkaReaders(srv)
+	srv.initKafkaReaders()
 
 	srv.GrpcServer = grpc.NewServer(serverOpts)
 	notification.RegisterNotificationServiceServer(srv.GrpcServer, srv)
@@ -33,13 +34,16 @@ func NewNotificationServer(serverOpts grpc.ServerOption) *NotificationServer {
 	return srv
 }
 
-func initKafkaReaders(srv *NotificationServer) []*kafka.Reader {
+func (srv *NotificationServer) initKafkaReaders() {
 	handlers := map[string]kafkaMessageHandlerFunc{
 		"order_created":   srv.HandleOrderCreated,
 		"order_confirmed": srv.HandleOrderCreated,
 		"order_canceled":  srv.HandleOrderCreated,
 	}
-	readers := []*kafka.Reader{}
+
+	var readerCtx context.Context
+	readerCtx, srv.readerCancelFunc = context.WithCancel(context.Background())
+	srv.kafkaReaders = []*kafka.Reader{}
 
 	for topic, handlerFunc := range handlers {
 		reader := kafka.NewReader(kafka.ReaderConfig{
@@ -47,25 +51,22 @@ func initKafkaReaders(srv *NotificationServer) []*kafka.Reader {
 			Topic:   topic,
 			GroupID: "notification_group",
 		})
-		readers = append(readers, reader)
+		srv.kafkaReaders = append(srv.kafkaReaders, reader)
 
 		go func() {
-			ctx := context.Background()
 			for {
-				msg, err := reader.ReadMessage(ctx)
+				msg, err := reader.ReadMessage(readerCtx)
 				if err != nil {
 					log.Loggers.Event.Println(err)
 					continue
 				}
 
-				if err = handlerFunc(ctx, msg); err != nil {
+				if err = handlerFunc(readerCtx, msg); err != nil {
 					log.Loggers.Event.Println(err)
 				}
 			}
 		}()
 	}
-
-	return readers
 }
 
 type kafkaMessageHandlerFunc func(ctx context.Context, msg kafka.Message) error
@@ -98,6 +99,8 @@ var allServers []*NotificationServer
 
 func Deinit() {
 	for _, srv := range allServers {
+		srv.readerCancelFunc()
+
 		for _, reader := range srv.kafkaReaders {
 			reader.Close()
 		}
