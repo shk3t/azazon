@@ -20,3 +20,8 @@ const (
 	Confirmed OrderStatus = iota + 1
 	Cancelled
 )
+
+type OrderEvent struct {
+	Id     int
+	UserId int
+}

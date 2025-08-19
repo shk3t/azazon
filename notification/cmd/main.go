@@ -29,7 +29,7 @@ func main() {
 		panic(err)
 	}
 
-	srv := server.CreateNotificationServer(
+	srv := server.NewNotificationServer(
 		grpc.ChainUnaryInterceptor(interceptor.LoggingUnaryInterceptor),
 	)
 
@@ -37,7 +37,7 @@ func main() {
 		"%s server is running on :%d\n",
 		config.AppName, port,
 	)
-	err = srv.Serve(lis)
+	err = srv.GrpcServer.Serve(lis)
 	if err != nil {
 		panic(err)
 	}

@@ -9,14 +9,14 @@ import (
 
 var Loggers = struct {
 	Debug   *log.Logger
-	Request *log.Logger
+	Event *log.Logger
 	Test    *log.Logger
 	Run     *log.Logger
 }{}
 
 var fileLoggers = map[string]**log.Logger{
 	"debug.log":   &Loggers.Debug,
-	"request.log": &Loggers.Request,
+	"event.log": &Loggers.Event,
 }
 
 var (

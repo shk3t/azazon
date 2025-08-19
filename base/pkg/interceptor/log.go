@@ -13,14 +13,14 @@ func LoggingUnaryInterceptor(
 	info *grpc.UnaryServerInfo,
 	handler grpc.UnaryHandler,
 ) (any, error) {
-	log.Loggers.Request.Printf(
+	log.Loggers.Event.Printf(
 		"Unary RPC: %s, request: %v",
 		info.FullMethod, req,
 	)
 
 	resp, err := handler(ctx, req)
 
-	log.Loggers.Request.Printf(
+	log.Loggers.Event.Printf(
 		"Unary RPC: %s, response: %v, error: %v",
 		info.FullMethod, resp, err,
 	)

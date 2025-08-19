@@ -14,6 +14,6 @@ type PaymentService struct {
 
 func NewPaymentService() *PaymentService {
 	return &PaymentService{
-		store: nil, // TODO
+		store: nil,
 	}
 }

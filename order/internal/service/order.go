@@ -14,6 +14,6 @@ type OrderService struct {
 
 func NewOrderService() *OrderService {
 	return &OrderService{
-		store: nil, // TODO
+		store: nil,
 	}
 }
