@@ -6,7 +6,6 @@ import (
 	"auth/internal/server"
 	"base/pkg/log"
 	baseSetup "base/pkg/setup"
-	"os"
 )
 
 func initAll(workDir string) error {
@@ -29,18 +28,4 @@ func deinitAll() {
 	log.Deinit()
 }
 
-var initializer = baseSetup.NewInitializer(
-	func(args ...any) error {
-		return initAll(args[0].(string))
-	},
-	deinitAll,
-)
-var InitAll = func(workDir string) error {
-	return initializer.Init(workDir)
-}
-var DeinitAll = initializer.Deinit
-
-func GracefullExit(code int) {
-	DeinitAll()
-	os.Exit(code)
-}
+var InitAll, DeinitAll = baseSetup.CreateInitFuncs(initAll, deinitAll)

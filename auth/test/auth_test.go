@@ -32,21 +32,25 @@ func TestMain(m *testing.M) {
 		setup.DeinitAll()
 		panic(err)
 	}
-	logger := log.Loggers.Test
 
+	logger := log.Loggers.Test
 	grpcUrl = fmt.Sprintf("localhost:%d", config.Env.TestPort)
+
 	cmd, err := baseSetup.ServerUp(workDir, grpcUrl, logger)
 	if err != nil {
 		baseSetup.ServerDown(cmd, logger)
 		logger.Println(err)
-		setup.GracefullExit(1)
+		setup.DeinitAll()
+		os.Exit(1)
 	}
 
 	logger.Println("Running tests...")
 	exitCode := m.Run()
 	logger.Println("Test run finished")
+
 	baseSetup.ServerDown(cmd, logger)
-	setup.GracefullExit(exitCode)
+	setup.DeinitAll()
+	os.Exit(exitCode)
 }
 
 func TestRegister(t *testing.T) {

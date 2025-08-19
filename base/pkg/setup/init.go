@@ -6,27 +6,28 @@ import (
 	"sync"
 )
 
-type initFunc func(...any) error
-type deinitFunc func()
+type InitFunc func(workDir string) error
+type DeinitFunc func()
 
 type Initializer struct {
-	init          initFunc
-	deinit        deinitFunc
+	init          InitFunc
+	deinit        DeinitFunc
 	up            bool
 	mutex         sync.Mutex
 	interruptChan chan os.Signal
 }
 
-func NewInitializer(init initFunc, deinit deinitFunc) *Initializer {
-	return &Initializer{
+func CreateInitFuncs(init InitFunc, deinit DeinitFunc) (InitFunc, DeinitFunc) {
+	i := Initializer{
 		init:          init,
 		deinit:        deinit,
 		up:            false,
 		interruptChan: make(chan os.Signal, 1),
 	}
+	return i.Init, i.Deinit
 }
 
-func (i *Initializer) Init(args ...any) error {
+func (i *Initializer) Init(workDir string) error {
 	i.mutex.Lock()
 	defer i.mutex.Unlock()
 	if i.up {
@@ -34,7 +35,7 @@ func (i *Initializer) Init(args ...any) error {
 	}
 	i.up = true
 
-	if err := i.init(args...); err != nil {
+	if err := i.init(workDir); err != nil {
 		i.up = false
 		i.deinit()
 		return err
