@@ -11,12 +11,12 @@ type decodedAuthResponse struct {
 }
 
 var registerTestCases = []struct {
-	request    *model.User
+	request    model.User
 	response   decodedAuthResponse
 	statusCode codes.Code
 }{
 	{
-		request: &model.User{
+		request: model.User{
 			Login:    "man",
 			Password: "somepassword",
 		},
@@ -26,7 +26,7 @@ var registerTestCases = []struct {
 		statusCode: codes.OK,
 	},
 	{
-		request: &model.User{
+		request: model.User{
 			Login:    "shortman",
 			Password: "short",
 		},
@@ -36,11 +36,11 @@ var registerTestCases = []struct {
 }
 
 var loginTestCases = []struct {
-	request    *model.User
+	request    model.User
 	statusCode codes.Code
 }{
 	{
-		request: &model.User{
+		request: model.User{
 			Login:    "man2",
 			Password: "somepassword2",
 		},
@@ -49,11 +49,11 @@ var loginTestCases = []struct {
 }
 
 var validateTokenTestCases = []struct {
-	registerRequest *model.User
+	registerRequest model.User
 	statusCode      codes.Code
 }{
 	{
-		registerRequest: &model.User{
+		registerRequest: model.User{
 			Login:    "man3",
 			Password: "somepassword3",
 		},
@@ -62,16 +62,16 @@ var validateTokenTestCases = []struct {
 }
 
 var updateUserTestCases = []struct {
-	oldUser    *model.User
-	newUser    *model.User
+	oldUser    model.User
+	newUser    model.User
 	statusCode codes.Code
 }{
 	{
-		oldUser: &model.User{
+		oldUser: model.User{
 			Login:    "man4",
 			Password: "somepassword4",
 		},
-		newUser: &model.User{
+		newUser: model.User{
 			Login:    "newman4",
 			Password: "newpassword4",
 			Role:     model.UserRoles.Admin,

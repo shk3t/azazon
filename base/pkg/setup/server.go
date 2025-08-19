@@ -15,7 +15,7 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
-func GetClient(url string) (
+func GetGrpcClient(url string) (
 	client auth.AuthServiceClient,
 	closeConn func() error,
 	err error,
@@ -96,7 +96,7 @@ func WaitForServerReady(url string, timeout time.Duration) error {
 	for {
 		select {
 		case <-ticker.C:
-			if _, _, err := GetClient(url); err == nil {
+			if _, _, err := GetGrpcClient(url); err == nil {
 				return nil
 			}
 		case <-done:

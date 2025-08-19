@@ -2,9 +2,9 @@ package service
 
 import (
 	"base/pkg/grpcutil"
-	"base/pkg/log"
 	"base/pkg/model"
 	"context"
+	"fmt"
 )
 
 var NewErr = grpcutil.NewError
@@ -21,7 +21,10 @@ func (s *NotificationService) HandleOrderCreated(
 	ctx context.Context,
 	body model.OrderEvent,
 ) error {
-	log.Loggers.Debug.Printf("Order created: %v\n", body)
+	SendEmail(
+		FmtUserById(body.UserId),
+		fmt.Sprintf("Order %d created", body.Id),
+	)
 	return nil
 }
 
@@ -29,7 +32,10 @@ func (s *NotificationService) HandleOrderConfirmed(
 	ctx context.Context,
 	body model.OrderEvent,
 ) error {
-	log.Loggers.Debug.Printf("Order confirmed: %v\n", body)
+	SendEmail(
+		FmtUserById(body.UserId),
+		fmt.Sprintf("Order %d confirmed", body.Id),
+	)
 	return nil
 }
 
@@ -37,6 +43,9 @@ func (s *NotificationService) HandleOrderCanceled(
 	ctx context.Context,
 	body model.OrderEvent,
 ) error {
-	log.Loggers.Debug.Printf("Order canceled: %v\n", body)
+	SendEmail(
+		FmtUserById(body.UserId),
+		fmt.Sprintf("Order %d canceled", body.Id),
+	)
 	return nil
 }

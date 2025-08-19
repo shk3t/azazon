@@ -55,7 +55,7 @@ func TestMain(m *testing.M) {
 
 func TestRegister(t *testing.T) {
 	require := require.New(t)
-	client, closeConn, _ := baseSetup.GetClient(grpcUrl)
+	client, closeConn, _ := baseSetup.GetGrpcClient(grpcUrl)
 	defer closeConn()
 
 	for _, testCase := range registerTestCases {
@@ -82,7 +82,7 @@ func TestRegister(t *testing.T) {
 
 func TestLogin(t *testing.T) {
 	require := require.New(t)
-	client, closeConn, _ := baseSetup.GetClient(grpcUrl)
+	client, closeConn, _ := baseSetup.GetGrpcClient(grpcUrl)
 	defer closeConn()
 
 	for _, testCase := range loginTestCases {
@@ -107,7 +107,7 @@ func TestLogin(t *testing.T) {
 
 func TestValidateToken(t *testing.T) {
 	require := require.New(t)
-	client, closeConn, _ := baseSetup.GetClient(grpcUrl)
+	client, closeConn, _ := baseSetup.GetGrpcClient(grpcUrl)
 	defer closeConn()
 
 	for _, testCase := range validateTokenTestCases {
@@ -132,7 +132,7 @@ func TestValidateToken(t *testing.T) {
 
 func TestUpdateUser(t *testing.T) {
 	require := require.New(t)
-	client, closeConn, _ := baseSetup.GetClient(grpcUrl)
+	client, closeConn, _ := baseSetup.GetGrpcClient(grpcUrl)
 	defer closeConn()
 
 	for _, testCase := range updateUserTestCases {

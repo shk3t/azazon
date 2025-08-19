@@ -20,9 +20,10 @@ func LoadEnv(workDir string) error {
 	}
 
 	Env = envFields{
-		Port:     sugar.Default(strconv.Atoi(getenv("PORT"))),
-		TestPort: sugar.Default(strconv.Atoi(getenv("TEST_PORT"))),
-		Test:     sugar.Default(strconv.ParseBool(getenv("TEST"))),
+		Port:             sugar.Default(strconv.Atoi(getAppEnv("PORT"))),
+		TestPort:         sugar.Default(strconv.Atoi(getAppEnv("TEST_PORT"))),
+		Test:             sugar.Default(strconv.ParseBool(getAppEnv("TEST"))),
+		KafkaBrokerHosts: []string{"localhost:" + os.Getenv("KAFKA_PORT")},
 	}
 
 	return nil
@@ -31,11 +32,12 @@ func LoadEnv(workDir string) error {
 const AppName = "NOTIFICATION"
 
 type envFields struct {
-	Port     int
-	TestPort int
-	Test     bool
+	Port             int
+	TestPort         int
+	Test             bool
+	KafkaBrokerHosts []string
 }
 
-func getenv(varName string) string {
+func getAppEnv(varName string) string {
 	return os.Getenv(fmt.Sprintf("%s_%s", AppName, varName))
 }

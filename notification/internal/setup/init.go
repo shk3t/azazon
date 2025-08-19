@@ -5,6 +5,7 @@ import (
 	baseSetup "base/pkg/setup"
 	"notification/internal/config"
 	"notification/internal/server"
+	"notification/internal/service"
 )
 
 func initAll(workDir string) error {
@@ -14,6 +15,9 @@ func initAll(workDir string) error {
 	if err := log.Init(workDir); err != nil {
 		return err
 	}
+	if err := service.InitMailer(workDir); err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -21,6 +25,7 @@ func initAll(workDir string) error {
 func deinitAll() {
 	server.Deinit()
 	log.Deinit()
+	service.DeinitMailer()
 }
 
 var InitAll, DeinitAll = baseSetup.CreateInitFuncs(initAll, deinitAll)

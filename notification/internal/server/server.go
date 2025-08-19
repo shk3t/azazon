@@ -6,6 +6,7 @@ import (
 	"base/pkg/model"
 	"context"
 	"encoding/json"
+	"notification/internal/config"
 	"notification/internal/service"
 
 	"github.com/segmentio/kafka-go"
@@ -47,7 +48,7 @@ func (srv *NotificationServer) initKafkaReaders() {
 
 	for topic, handlerFunc := range handlers {
 		reader := kafka.NewReader(kafka.ReaderConfig{
-			Brokers: []string{"localhost:9092"},
+			Brokers: config.Env.KafkaBrokerHosts,
 			Topic:   topic,
 			GroupID: "notification_group",
 		})
