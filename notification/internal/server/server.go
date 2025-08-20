@@ -6,8 +6,10 @@ import (
 	"base/pkg/model"
 	"context"
 	"encoding/json"
+	"errors"
 	"notification/internal/config"
 	"notification/internal/service"
+	"sync"
 
 	"github.com/segmentio/kafka-go"
 	"google.golang.org/grpc"
@@ -38,8 +40,8 @@ func NewNotificationServer(serverOpts grpc.ServerOption) *NotificationServer {
 func (srv *NotificationServer) initKafkaReaders() {
 	handlers := map[string]kafkaMessageHandlerFunc{
 		"order_created":   srv.HandleOrderCreated,
-		"order_confirmed": srv.HandleOrderCreated,
-		"order_canceled":  srv.HandleOrderCreated,
+		"order_confirmed": srv.HandleOrderConfirmed,
+		"order_canceled":  srv.HandleOrderCanceled,
 	}
 
 	var readerCtx context.Context
@@ -56,9 +58,12 @@ func (srv *NotificationServer) initKafkaReaders() {
 
 		go func() {
 			for {
-				msg, err := reader.ReadMessage(readerCtx)  // TODO: it fetches message unstoppably
+				msg, err := reader.ReadMessage(readerCtx)
 				if err != nil {
 					log.Loggers.Event.Println(err)
+					if errors.Is(err, context.Canceled) {
+						return
+					}
 					continue
 				}
 
@@ -102,9 +107,16 @@ func Deinit() {
 	for _, srv := range allServers {
 		srv.readerCancelFunc()
 
-		for _, reader := range srv.kafkaReaders {
-			reader.Close()
+		var wg sync.WaitGroup
+		for i, reader := range srv.kafkaReaders {
+			wg.Add(1)
+			go func() {
+				reader.Close()
+				log.Debug(i, "kafka reader closed")
+				wg.Done()
+			}()
 		}
+		wg.Wait()
 
 		srv.GrpcServer.GracefulStop()
 	}

@@ -10,7 +10,6 @@ import (
 	"order/internal/config"
 	"order/internal/server"
 	"order/internal/setup"
-	"os"
 	"path/filepath"
 
 	"google.golang.org/grpc"
@@ -19,7 +18,7 @@ import (
 func main() {
 	workDir, _ := helper.GetwdCdBack("order", "cmd")
 	workDir = filepath.Join(workDir, "order")
-	err := setup.InitAll(sugar.Default(os.Getwd()))
+	err := setup.InitAll(workDir)
 	if err != nil {
 		panic(err)
 	}

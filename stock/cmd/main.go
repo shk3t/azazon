@@ -7,7 +7,6 @@ import (
 	"base/pkg/sugar"
 	"fmt"
 	"net"
-	"os"
 	"path/filepath"
 	"stock/internal/config"
 	"stock/internal/server"
@@ -19,7 +18,7 @@ import (
 func main() {
 	workDir, _ := helper.GetwdCdBack("stock", "cmd")
 	workDir = filepath.Join(workDir, "stock")
-	err := setup.InitAll(sugar.Default(os.Getwd()))
+	err := setup.InitAll(workDir)
 	if err != nil {
 		panic(err)
 	}

@@ -52,7 +52,7 @@ func Init(workDir string) error {
 
 func Deinit() {
 	for _, loggerPtr := range fileLoggers {
-		if loggerPtr == nil {
+		if loggerPtr == nil || *loggerPtr == nil {
 			continue
 		}
 
