@@ -50,9 +50,10 @@ func (srv *NotificationServer) initKafkaReaders() {
 
 	for topic, handlerFunc := range handlers {
 		reader := kafka.NewReader(kafka.ReaderConfig{
-			Brokers: config.Env.KafkaBrokerHosts,
-			Topic:   topic,
-			GroupID: "notification_group",
+			Brokers:     config.Env.KafkaBrokerHosts,
+			Topic:       topic,
+			GroupID:     "notification_group",
+			StartOffset: kafka.LastOffset,
 		})
 		srv.kafkaReaders = append(srv.kafkaReaders, reader)
 
@@ -70,6 +71,10 @@ func (srv *NotificationServer) initKafkaReaders() {
 				if err = handlerFunc(readerCtx, msg); err != nil {
 					log.Loggers.Event.Println(err)
 				}
+				log.Loggers.Event.Printf(
+					"Message %s in topic %s handled",
+					string(msg.Value), topic,
+				)
 			}
 		}()
 	}
@@ -108,11 +113,10 @@ func Deinit() {
 		srv.readerCancelFunc()
 
 		var wg sync.WaitGroup
-		for i, reader := range srv.kafkaReaders {
+		for _, reader := range srv.kafkaReaders {
 			wg.Add(1)
 			go func() {
 				reader.Close()
-				log.Debug(i, "kafka reader closed")
 				wg.Done()
 			}()
 		}

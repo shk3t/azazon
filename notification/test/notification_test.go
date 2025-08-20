@@ -14,6 +14,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"testing"
+	"time"
 
 	"github.com/segmentio/kafka-go"
 	"github.com/stretchr/testify/require"
@@ -73,10 +74,13 @@ func TestOrderCreated(t *testing.T) {
 		)
 		require.NoError(err)
 
+		time.Sleep(10 * time.Second)
+
 		messages, err := service.ReadEmails(
 			service.FmtUserById(testCase.order.UserId),
 		)
 		require.NoError(err)
+		require.True(len(messages) > 0, "No new messages recieved")
 		msg := messages[len(messages)-1]
 		require.Contains(msg, service.FmtUserById(testCase.order.UserId))
 		require.Contains(msg, fmt.Sprintf("Order %d", testCase.order.Id))
