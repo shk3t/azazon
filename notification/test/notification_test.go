@@ -1,11 +1,11 @@
 package notificationtest
 
 import (
+	conv "base/pkg/conversion"
 	"base/pkg/log"
 	baseSetup "base/pkg/setup"
 	"base/pkg/sugar"
 	"context"
-	"encoding/json"
 	"fmt"
 	"notification/internal/config"
 	"notification/internal/service"
@@ -18,6 +18,7 @@ import (
 
 	"github.com/segmentio/kafka-go"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/proto"
 )
 
 var grpcUrl string
@@ -63,12 +64,12 @@ func TestOrderCreated(t *testing.T) {
 	for i, testCase := range orderCreatedTestCases {
 		ctx := context.Background()
 
-		payload, err := json.Marshal(testCase.order)
+		payload, err := proto.Marshal(conv.OrderEventProto(&testCase.order))
 		require.NoError(err)
 
 		err = writer.WriteMessages(ctx,
 			kafka.Message{
-				Key:   []byte(strconv.Itoa(testCase.order.Id)),
+				Key:   []byte(strconv.Itoa(testCase.order.OrderId)),
 				Value: payload,
 			},
 		)
@@ -87,7 +88,7 @@ func TestOrderCreated(t *testing.T) {
 		require.True(len(messages) > 0, "No new messages recieved")
 		msg := messages[len(messages)-1]
 		require.Contains(msg, service.FmtUserById(testCase.order.UserId))
-		require.Contains(msg, fmt.Sprintf("Order %d", testCase.order.Id))
+		require.Contains(msg, fmt.Sprintf("Order %d", testCase.order.OrderId))
 		require.Contains(msg, "created")
 	}
 }

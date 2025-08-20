@@ -40,3 +40,8 @@ message GetOrderInfoResponse {
     string address = 4;
     string track = 5;
 }
+
+message OrderEvent {
+    int64 order_id = 1;
+    int64 user_id = 2;
+}

@@ -2,10 +2,10 @@ package server
 
 import (
 	"base/api/notification"
+	"base/api/order"
+	conv "base/pkg/conversion"
 	"base/pkg/log"
-	"base/pkg/model"
 	"context"
-	"encoding/json"
 	"errors"
 	"notification/internal/config"
 	"notification/internal/service"
@@ -14,6 +14,7 @@ import (
 
 	"github.com/segmentio/kafka-go"
 	"google.golang.org/grpc"
+	"google.golang.org/protobuf/proto"
 )
 
 type NotificationServer struct {
@@ -85,27 +86,27 @@ func (srv *NotificationServer) initKafkaReaders() {
 type kafkaMessageHandlerFunc func(ctx context.Context, msg kafka.Message) error
 
 func (s *NotificationServer) HandleOrderCreated(ctx context.Context, msg kafka.Message) error {
-	var in model.OrderEvent
-	if err := json.Unmarshal(msg.Value, &in); err != nil {
+	var in order.OrderEvent
+	if err := proto.Unmarshal(msg.Value, &in); err != nil {
 		return err
 	}
-	return s.service.HandleOrderCreated(ctx, in)
+	return s.service.HandleOrderCreated(ctx, *conv.OrderEventModel(&in))
 }
 
 func (s *NotificationServer) HandleOrderConfirmed(ctx context.Context, msg kafka.Message) error {
-	var in model.OrderEvent
-	if err := json.Unmarshal(msg.Value, &in); err != nil {
+	var in order.OrderEvent
+	if err := proto.Unmarshal(msg.Value, &in); err != nil {
 		return err
 	}
-	return s.service.HandleOrderConfirmed(ctx, in)
+	return s.service.HandleOrderCreated(ctx, *conv.OrderEventModel(&in))
 }
 
 func (s *NotificationServer) HandleOrderCanceled(ctx context.Context, msg kafka.Message) error {
-	var in model.OrderEvent
-	if err := json.Unmarshal(msg.Value, &in); err != nil {
+	var in order.OrderEvent
+	if err := proto.Unmarshal(msg.Value, &in); err != nil {
 		return err
 	}
-	return s.service.HandleOrderCanceled(ctx, in)
+	return s.service.HandleOrderCreated(ctx, *conv.OrderEventModel(&in))
 }
 
 var allServers []*NotificationServer

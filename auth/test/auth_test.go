@@ -4,6 +4,7 @@ import (
 	"auth/internal/config"
 	"auth/internal/setup"
 	"base/api/auth"
+	conv "base/pkg/conversion"
 	errpkg "base/pkg/errors"
 	"base/pkg/log"
 	"base/pkg/model"
@@ -61,10 +62,7 @@ func TestRegister(t *testing.T) {
 	for _, testCase := range registerTestCases {
 		ctx := context.Background()
 
-		resp, err := client.Register(ctx, &auth.RegisterRequest{
-			Login:    testCase.request.Login,
-			Password: testCase.request.Password,
-		})
+		resp, err := client.Register(ctx, conv.RegisterRequest(&testCase.request))
 		st, ok := status.FromError(err)
 		require.True(ok, err)
 
@@ -89,15 +87,9 @@ func TestLogin(t *testing.T) {
 		ctx := context.Background()
 
 		// It is supposed to work
-		_, _ = client.Register(ctx, &auth.RegisterRequest{
-			Login:    testCase.request.Login,
-			Password: testCase.request.Password,
-		})
+		_, _ = client.Register(ctx, conv.RegisterRequest(&testCase.request))
 
-		_, err := client.Login(ctx, &auth.LoginRequest{
-			Login:    testCase.request.Login,
-			Password: testCase.request.Password,
-		})
+		_, err := client.Login(ctx, conv.LoginRequest(&testCase.request))
 		st, ok := status.FromError(err)
 		require.True(ok, err)
 
@@ -113,10 +105,7 @@ func TestValidateToken(t *testing.T) {
 	for _, testCase := range validateTokenTestCases {
 		ctx := context.Background()
 
-		respReg, _ := client.Register(ctx, &auth.RegisterRequest{
-			Login:    testCase.registerRequest.Login,
-			Password: testCase.registerRequest.Password,
-		})
+		respReg, _ := client.Register(ctx, conv.RegisterRequest(&testCase.registerRequest))
 		require.NotNil(respReg)
 
 		resp, err := client.ValidateToken(ctx, &auth.ValidateTokenRequest{
@@ -138,10 +127,7 @@ func TestUpdateUser(t *testing.T) {
 	for _, testCase := range updateUserTestCases {
 		ctx := context.Background()
 
-		respReg, _ := client.Register(ctx, &auth.RegisterRequest{
-			Login:    testCase.oldUser.Login,
-			Password: testCase.oldUser.Password,
-		})
+		respReg, _ := client.Register(ctx, conv.RegisterRequest(&testCase.oldUser))
 		require.NotNil(respReg)
 
 		resp, err := client.UpdateUser(ctx, &auth.UpdateUserRequest{
@@ -166,10 +152,7 @@ func TestUpdateUser(t *testing.T) {
 		require.Equal(testCase.newUser.Login, claims.Login)
 		require.Equal(testCase.newUser.Role, claims.Role)
 
-		respLog, err := client.Login(ctx, &auth.LoginRequest{
-			Login:    testCase.newUser.Login,
-			Password: testCase.newUser.Password,
-		})
+		respLog, err := client.Login(ctx, conv.LoginRequest(&testCase.newUser))
 		st, ok = status.FromError(err)
 		require.True(ok, err)
 

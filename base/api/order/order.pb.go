@@ -354,6 +354,58 @@ func (x *GetOrderInfoResponse) GetTrack() string {
 	return ""
 }
 
+type OrderEvent struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	OrderId       int64                  `protobuf:"varint,1,opt,name=order_id,json=orderId,proto3" json:"order_id,omitempty"`
+	UserId        int64                  `protobuf:"varint,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *OrderEvent) Reset() {
+	*x = OrderEvent{}
+	mi := &file_order_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *OrderEvent) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*OrderEvent) ProtoMessage() {}
+
+func (x *OrderEvent) ProtoReflect() protoreflect.Message {
+	mi := &file_order_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use OrderEvent.ProtoReflect.Descriptor instead.
+func (*OrderEvent) Descriptor() ([]byte, []int) {
+	return file_order_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *OrderEvent) GetOrderId() int64 {
+	if x != nil {
+		return x.OrderId
+	}
+	return 0
+}
+
+func (x *OrderEvent) GetUserId() int64 {
+	if x != nil {
+		return x.UserId
+	}
+	return 0
+}
+
 var File_order_proto protoreflect.FileDescriptor
 
 const file_order_proto_rawDesc = "" +
@@ -376,7 +428,11 @@ const file_order_proto_rawDesc = "" +
 	"\x05items\x18\x02 \x03(\v2\v.order.ItemR\x05items\x12*\n" +
 	"\x06status\x18\x03 \x01(\x0e2\x12.order.OrderStatusR\x06status\x12\x18\n" +
 	"\aaddress\x18\x04 \x01(\tR\aaddress\x12\x14\n" +
-	"\x05track\x18\x05 \x01(\tR\x05track*8\n" +
+	"\x05track\x18\x05 \x01(\tR\x05track\"@\n" +
+	"\n" +
+	"OrderEvent\x12\x19\n" +
+	"\border_id\x18\x01 \x01(\x03R\aorderId\x12\x17\n" +
+	"\auser_id\x18\x02 \x01(\x03R\x06userId*8\n" +
 	"\vOrderStatus\x12\v\n" +
 	"\aUNKNOWN\x10\x00\x12\r\n" +
 	"\tCONFIRMED\x10\x01\x12\r\n" +
@@ -398,7 +454,7 @@ func file_order_proto_rawDescGZIP() []byte {
 }
 
 var file_order_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_order_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
+var file_order_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_order_proto_goTypes = []any{
 	(OrderStatus)(0),             // 0: order.OrderStatus
 	(*Item)(nil),                 // 1: order.Item
@@ -406,6 +462,7 @@ var file_order_proto_goTypes = []any{
 	(*CreateOrderResponse)(nil),  // 3: order.CreateOrderResponse
 	(*GetOrderInfoRequest)(nil),  // 4: order.GetOrderInfoRequest
 	(*GetOrderInfoResponse)(nil), // 5: order.GetOrderInfoResponse
+	(*OrderEvent)(nil),           // 6: order.OrderEvent
 }
 var file_order_proto_depIdxs = []int32{
 	1, // 0: order.CreateOrderRequest.items:type_name -> order.Item
@@ -433,7 +490,7 @@ func file_order_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_order_proto_rawDesc), len(file_order_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   5,
+			NumMessages:   6,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

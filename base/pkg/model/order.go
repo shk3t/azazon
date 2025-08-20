@@ -22,6 +22,6 @@ const (
 )
 
 type OrderEvent struct {
-	Id     int
-	UserId int
+	OrderId int
+	UserId  int
 }

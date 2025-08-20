@@ -26,6 +26,20 @@ func User[R *auth.RegisterRequest | *auth.LoginRequest | *auth.UpdateUserRequest
 	return nil
 }
 
+func RegisterRequest(u *model.User) *auth.RegisterRequest {
+	return &auth.RegisterRequest{
+		Login:    u.Login,
+		Password: u.Password,
+	}
+}
+
+func LoginRequest(u *model.User) *auth.LoginRequest {
+	return &auth.LoginRequest{
+		Login:    u.Login,
+		Password: u.Password,
+	}
+}
+
 func RegisterResponse(r *model.AuthResponse) *auth.RegisterResponse {
 	return &auth.RegisterResponse{Token: r.Token}
 }

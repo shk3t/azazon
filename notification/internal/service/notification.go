@@ -23,7 +23,7 @@ func (s *NotificationService) HandleOrderCreated(
 ) error {
 	SendEmail(
 		FmtUserById(body.UserId),
-		fmt.Sprintf("Order %d created", body.Id),
+		fmt.Sprintf("Order %d created", body.OrderId),
 	)
 	return nil
 }
@@ -34,7 +34,7 @@ func (s *NotificationService) HandleOrderConfirmed(
 ) error {
 	SendEmail(
 		FmtUserById(body.UserId),
-		fmt.Sprintf("Order %d confirmed", body.Id),
+		fmt.Sprintf("Order %d confirmed", body.OrderId),
 	)
 	return nil
 }
@@ -45,7 +45,7 @@ func (s *NotificationService) HandleOrderCanceled(
 ) error {
 	SendEmail(
 		FmtUserById(body.UserId),
-		fmt.Sprintf("Order %d canceled", body.Id),
+		fmt.Sprintf("Order %d canceled", body.OrderId),
 	)
 	return nil
 }
