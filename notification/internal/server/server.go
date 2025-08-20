@@ -56,7 +56,7 @@ func (srv *NotificationServer) initKafkaReaders() {
 
 		go func() {
 			for {
-				msg, err := reader.ReadMessage(readerCtx)
+				msg, err := reader.ReadMessage(readerCtx)  // TODO: it fetches message unstoppably
 				if err != nil {
 					log.Loggers.Event.Println(err)
 					continue

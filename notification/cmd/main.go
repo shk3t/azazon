@@ -1,6 +1,7 @@
 package main
 
 import (
+	"base/pkg/helper"
 	"base/pkg/interceptor"
 	"base/pkg/log"
 	"base/pkg/sugar"
@@ -10,11 +11,14 @@ import (
 	"notification/internal/server"
 	"notification/internal/setup"
 	"os"
+	"path/filepath"
 
 	"google.golang.org/grpc"
 )
 
 func main() {
+	workDir, _ := helper.GetwdCdBack("notification", "cmd")
+	workDir = filepath.Join(workDir, "notification")
 	err := setup.InitAll(sugar.Default(os.Getwd()))
 	if err != nil {
 		panic(err)

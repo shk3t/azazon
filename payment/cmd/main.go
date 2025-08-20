@@ -1,12 +1,14 @@
 package main
 
 import (
+	"base/pkg/helper"
 	"base/pkg/interceptor"
 	"base/pkg/log"
 	"base/pkg/sugar"
 	"fmt"
 	"net"
 	"os"
+	"path/filepath"
 	"payment/internal/config"
 	"payment/internal/server"
 	"payment/internal/setup"
@@ -15,6 +17,8 @@ import (
 )
 
 func main() {
+	workDir, _ := helper.GetwdCdBack("payment", "cmd")
+	workDir = filepath.Join(workDir, "payment")
 	err := setup.InitAll(sugar.Default(os.Getwd()))
 	if err != nil {
 		panic(err)

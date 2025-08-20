@@ -4,18 +4,21 @@ import (
 	"auth/internal/config"
 	"auth/internal/server"
 	"auth/internal/setup"
+	"base/pkg/helper"
 	"base/pkg/interceptor"
 	"base/pkg/log"
 	"base/pkg/sugar"
 	"fmt"
 	"net"
-	"os"
+	"path/filepath"
 
 	"google.golang.org/grpc"
 )
 
 func main() {
-	err := setup.InitAll(sugar.Default(os.Getwd()))
+	workDir, _ := helper.GetwdCdBack("auth", "cmd")
+	workDir = filepath.Join(workDir, "auth")
+	err := setup.InitAll(workDir)
 	if err != nil {
 		panic(err)
 	}
