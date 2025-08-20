@@ -60,7 +60,7 @@ func TestOrderCreated(t *testing.T) {
 	})
 	defer writer.Close()
 
-	for _, testCase := range orderCreatedTestCases {
+	for i, testCase := range orderCreatedTestCases {
 		ctx := context.Background()
 
 		payload, err := json.Marshal(testCase.order)
@@ -74,7 +74,11 @@ func TestOrderCreated(t *testing.T) {
 		)
 		require.NoError(err)
 
-		time.Sleep(10 * time.Second)
+		if i == 0 {
+			time.Sleep(3 * time.Second)
+		} else {
+			time.Sleep(10 * time.Millisecond)
+		}
 
 		messages, err := service.ReadEmails(
 			service.FmtUserById(testCase.order.UserId),

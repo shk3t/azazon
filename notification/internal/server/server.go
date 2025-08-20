@@ -10,6 +10,7 @@ import (
 	"notification/internal/config"
 	"notification/internal/service"
 	"sync"
+	"time"
 
 	"github.com/segmentio/kafka-go"
 	"google.golang.org/grpc"
@@ -50,10 +51,11 @@ func (srv *NotificationServer) initKafkaReaders() {
 
 	for topic, handlerFunc := range handlers {
 		reader := kafka.NewReader(kafka.ReaderConfig{
-			Brokers:     config.Env.KafkaBrokerHosts,
-			Topic:       topic,
-			GroupID:     "notification_group",
-			StartOffset: kafka.LastOffset,
+			Brokers:          config.Env.KafkaBrokerHosts,
+			Topic:            topic,
+			GroupID:          "notification_group",
+			StartOffset:      kafka.LastOffset,
+			RebalanceTimeout: 1 * time.Second,
 		})
 		srv.kafkaReaders = append(srv.kafkaReaders, reader)
 
