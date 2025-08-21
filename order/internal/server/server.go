@@ -1,36 +1,34 @@
 package server
 
 import (
-	"order/internal/service"
 	"base/api/order"
+	"order/internal/service"
 
 	"google.golang.org/grpc"
 )
 
 type OrderServer struct {
 	order.UnimplementedOrderServiceServer
-	service service.OrderService
+	GrpcServer *grpc.Server
+	service    service.OrderService
 }
 
-func NewOrderServer() *OrderServer {
-	return &OrderServer{
+func NewOrderServer(opts grpc.ServerOption) *OrderServer {
+	srv := &OrderServer{
 		service: *service.NewOrderService(),
 	}
-}
 
-func CreateOrderServer(opts grpc.ServerOption) *grpc.Server {
-	srv := grpc.NewServer(opts)
-	order.RegisterOrderServiceServer(srv, NewOrderServer())
+	srv.GrpcServer = grpc.NewServer(opts)
+	order.RegisterOrderServiceServer(srv.GrpcServer, srv)
 
-	runningServers = append(runningServers, srv)
-
+	allServers = append(allServers, srv)
 	return srv
 }
 
-var runningServers []*grpc.Server
+var allServers []*OrderServer
 
 func Deinit() {
-	for _, srv := range runningServers {
-		srv.GracefulStop()
+	for _, srv := range allServers {
+		srv.GrpcServer.GracefulStop()
 	}
 }

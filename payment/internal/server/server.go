@@ -1,36 +1,34 @@
 package server
 
 import (
-	"payment/internal/service"
 	"base/api/payment"
+	"payment/internal/service"
 
 	"google.golang.org/grpc"
 )
 
 type PaymentServer struct {
 	payment.UnimplementedPaymentServiceServer
-	service service.PaymentService
+	GrpcServer *grpc.Server
+	service    service.PaymentService
 }
 
-func NewPaymentServer() *PaymentServer {
-	return &PaymentServer{
+func NewPaymentServer(opts grpc.ServerOption) *PaymentServer {
+	srv := &PaymentServer{
 		service: *service.NewPaymentService(),
 	}
-}
 
-func CreatePaymentServer(opts grpc.ServerOption) *grpc.Server {
-	srv := grpc.NewServer(opts)
-	payment.RegisterPaymentServiceServer(srv, NewPaymentServer())
+	srv.GrpcServer = grpc.NewServer(opts)
+	payment.RegisterPaymentServiceServer(srv.GrpcServer, srv)
 
-	runningServers = append(runningServers, srv)
-
+	allServers = append(allServers, srv)
 	return srv
 }
 
-var runningServers []*grpc.Server
+var allServers []*PaymentServer
 
 func Deinit() {
-	for _, srv := range runningServers {
-		srv.GracefulStop()
+	for _, srv := range allServers {
+		srv.GrpcServer.GracefulStop()
 	}
 }

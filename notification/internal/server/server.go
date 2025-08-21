@@ -25,14 +25,14 @@ type NotificationServer struct {
 	readerCancelFunc context.CancelFunc
 }
 
-func NewNotificationServer(serverOpts grpc.ServerOption) *NotificationServer {
+func NewNotificationServer(opts grpc.ServerOption) *NotificationServer {
 	srv := &NotificationServer{
 		service: *service.NewNotificationService(),
 	}
 
 	srv.initKafkaReaders()
 
-	srv.GrpcServer = grpc.NewServer(serverOpts)
+	srv.GrpcServer = grpc.NewServer(opts)
 	notification.RegisterNotificationServiceServer(srv.GrpcServer, srv)
 
 	allServers = append(allServers, srv)

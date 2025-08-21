@@ -12,21 +12,19 @@ import (
 
 type AuthServer struct {
 	auth.UnimplementedAuthServiceServer
-	service service.AuthService
+	GrpcServer *grpc.Server
+	service    service.AuthService
 }
 
-func NewAuthServer() *AuthServer {
-	return &AuthServer{
+func NewAuthServer(opts grpc.ServerOption) *AuthServer {
+	srv := &AuthServer{
 		service: *service.NewAuthService(),
 	}
-}
 
-func CreateAuthServer(opts grpc.ServerOption) *grpc.Server {
-	srv := grpc.NewServer(opts)
-	auth.RegisterAuthServiceServer(srv, NewAuthServer())
+	srv.GrpcServer = grpc.NewServer(opts)
+	auth.RegisterAuthServiceServer(srv.GrpcServer, srv)
 
-	runningServers = append(runningServers, srv)
-
+	allServers = append(allServers, srv)
 	return srv
 }
 
@@ -79,10 +77,10 @@ func (s *AuthServer) UpdateUser(
 	return conv.UpdateUserResponse(resp), nil
 }
 
-var runningServers []*grpc.Server
+var allServers []*AuthServer
 
 func Deinit() {
-	for _, srv := range runningServers {
-		srv.GracefulStop()
+	for _, srv := range allServers {
+		srv.GrpcServer.GracefulStop()
 	}
 }

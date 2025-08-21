@@ -1,36 +1,34 @@
 package server
 
 import (
-	"stock/internal/service"
 	"base/api/stock"
+	"stock/internal/service"
 
 	"google.golang.org/grpc"
 )
 
 type StockServer struct {
 	stock.UnimplementedStockServiceServer
-	service service.StockService
+	GrpcServer *grpc.Server
+	service    service.StockService
 }
 
-func NewStockServer() *StockServer {
-	return &StockServer{
+func NewStockServer(opts grpc.ServerOption) *StockServer {
+	srv := &StockServer{
 		service: *service.NewStockService(),
 	}
-}
 
-func CreateStockServer(opts grpc.ServerOption) *grpc.Server {
-	srv := grpc.NewServer(opts)
-	stock.RegisterStockServiceServer(srv, NewStockServer())
+	srv.GrpcServer = grpc.NewServer(opts)
+	stock.RegisterStockServiceServer(srv.GrpcServer, srv)
 
-	runningServers = append(runningServers, srv)
-
+	allServers = append(allServers, srv)
 	return srv
 }
 
-var runningServers []*grpc.Server
+var allServers []*StockServer
 
 func Deinit() {
-	for _, srv := range runningServers {
-		srv.GracefulStop()
+	for _, srv := range allServers {
+		srv.GrpcServer.GracefulStop()
 	}
 }
