@@ -2,8 +2,8 @@ package store
 
 import (
 	"auth/internal/query"
-	errpkg "base/pkg/errors"
-	"base/pkg/model"
+	errpkg "common/pkg/errors"
+	"common/pkg/model"
 	"context"
 	"errors"
 

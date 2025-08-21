@@ -1,8 +1,8 @@
 package setup
 
 import (
-	"base/pkg/log"
-	baseSetup "base/pkg/setup"
+	"common/pkg/log"
+	commSetup "common/pkg/setup"
 	"order/internal/config"
 	"order/internal/database"
 	"order/internal/server"
@@ -28,4 +28,4 @@ func deinitAll() {
 	log.Deinit()
 }
 
-var InitAll, DeinitAll = baseSetup.CreateInitFuncs(initAll, deinitAll)
+var InitAll, DeinitAll = commSetup.CreateInitFuncs(initAll, deinitAll)

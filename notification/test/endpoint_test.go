@@ -1,10 +1,10 @@
 package notificationtest
 
 import (
-	conv "base/pkg/conversion"
-	"base/pkg/log"
-	baseSetup "base/pkg/setup"
-	"base/pkg/sugar"
+	conv "common/pkg/conversion"
+	"common/pkg/log"
+	commSetup "common/pkg/setup"
+	"common/pkg/sugar"
 	"context"
 	"fmt"
 	"notification/internal/config"
@@ -36,9 +36,9 @@ func TestMain(m *testing.M) {
 	logger := log.Loggers.Test
 	grpcUrl = fmt.Sprintf("localhost:%d", config.Env.TestPort)
 
-	cmd, err := baseSetup.ServerUp(workDir, grpcUrl, logger)
+	cmd, err := commSetup.ServerUp(workDir, grpcUrl, logger)
 	if err != nil {
-		baseSetup.ServerDown(cmd, logger)
+		commSetup.ServerDown(cmd, logger)
 		logger.Println(err)
 		setup.DeinitAll()
 		os.Exit(1)
@@ -48,7 +48,7 @@ func TestMain(m *testing.M) {
 	exitCode := m.Run()
 	logger.Println("Test run finished")
 
-	baseSetup.ServerDown(cmd, logger)
+	commSetup.ServerDown(cmd, logger)
 	setup.DeinitAll()
 	os.Exit(exitCode)
 }

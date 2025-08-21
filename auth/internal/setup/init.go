@@ -4,8 +4,8 @@ import (
 	"auth/internal/config"
 	"auth/internal/database"
 	"auth/internal/server"
-	"base/pkg/log"
-	baseSetup "base/pkg/setup"
+	"common/pkg/log"
+	commmSetup "common/pkg/setup"
 )
 
 func initAll(workDir string) error {
@@ -28,4 +28,4 @@ func deinitAll() {
 	log.Deinit()
 }
 
-var InitAll, DeinitAll = baseSetup.CreateInitFuncs(initAll, deinitAll)
+var InitAll, DeinitAll = commmSetup.CreateInitFuncs(initAll, deinitAll)

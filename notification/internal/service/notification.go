@@ -1,8 +1,8 @@
 package service
 
 import (
-	"base/pkg/grpcutil"
-	"base/pkg/model"
+	"common/pkg/grpcutil"
+	"common/pkg/model"
 	"context"
 	"fmt"
 )
@@ -10,8 +10,7 @@ import (
 var NewErr = grpcutil.NewError
 var NewInternalErr = grpcutil.NewInternalError
 
-type NotificationService struct {
-}
+type NotificationService struct{}
 
 func NewNotificationService() *NotificationService {
 	return &NotificationService{}

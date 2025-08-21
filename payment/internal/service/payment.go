@@ -1,19 +1,31 @@
 package service
 
-import "base/pkg/grpcutil"
+import (
+	"common/pkg/grpcutil"
+	"common/pkg/model"
+	"context"
+)
 
 var NewErr = grpcutil.NewError
 var NewInternalErr = grpcutil.NewInternalError
 
-type paymentStore interface {
-}
-
-type PaymentService struct {
-	store paymentStore
-}
+type PaymentService struct{}
 
 func NewPaymentService() *PaymentService {
-	return &PaymentService{
-		store: nil,
+	return &PaymentService{}
+}
+
+func (s *PaymentService) StartPayment(
+	ctx context.Context,
+	body model.OrderEvent,
+) error {
+	balance := 10000
+
+	if body.FullPrice > balance {
+		// TODO: cancel
 	}
+
+	// TODO: confirm
+
+	return nil
 }

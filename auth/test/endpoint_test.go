@@ -3,14 +3,14 @@ package authtest
 import (
 	"auth/internal/config"
 	"auth/internal/setup"
-	"base/api/auth"
-	conv "base/pkg/conversion"
-	errpkg "base/pkg/errors"
-	"base/pkg/log"
-	"base/pkg/model"
-	"base/pkg/service"
-	baseSetup "base/pkg/setup"
-	"base/pkg/sugar"
+	"common/api/auth"
+	conv "common/pkg/conversion"
+	errpkg "common/pkg/errors"
+	"common/pkg/log"
+	"common/pkg/model"
+	"common/pkg/service"
+	commSetup "common/pkg/setup"
+	"common/pkg/sugar"
 	"context"
 	"fmt"
 	"os"
@@ -37,9 +37,9 @@ func TestMain(m *testing.M) {
 	logger := log.Loggers.Test
 	grpcUrl = fmt.Sprintf("localhost:%d", config.Env.TestPort)
 
-	cmd, err := baseSetup.ServerUp(workDir, grpcUrl, logger)
+	cmd, err := commSetup.ServerUp(workDir, grpcUrl, logger)
 	if err != nil {
-		baseSetup.ServerDown(cmd, logger)
+		commSetup.ServerDown(cmd, logger)
 		logger.Println(err)
 		setup.DeinitAll()
 		os.Exit(1)
@@ -49,14 +49,14 @@ func TestMain(m *testing.M) {
 	exitCode := m.Run()
 	logger.Println("Test run finished")
 
-	baseSetup.ServerDown(cmd, logger)
+	commSetup.ServerDown(cmd, logger)
 	setup.DeinitAll()
 	os.Exit(exitCode)
 }
 
 func TestRegister(t *testing.T) {
 	require := require.New(t)
-	client, closeConn, _ := baseSetup.GetGrpcClient(grpcUrl)
+	client, closeConn, _ := commSetup.GetGrpcClient(grpcUrl)
 	defer closeConn()
 
 	for _, testCase := range registerTestCases {
@@ -80,7 +80,7 @@ func TestRegister(t *testing.T) {
 
 func TestLogin(t *testing.T) {
 	require := require.New(t)
-	client, closeConn, _ := baseSetup.GetGrpcClient(grpcUrl)
+	client, closeConn, _ := commSetup.GetGrpcClient(grpcUrl)
 	defer closeConn()
 
 	for _, testCase := range loginTestCases {
@@ -99,7 +99,7 @@ func TestLogin(t *testing.T) {
 
 func TestValidateToken(t *testing.T) {
 	require := require.New(t)
-	client, closeConn, _ := baseSetup.GetGrpcClient(grpcUrl)
+	client, closeConn, _ := commSetup.GetGrpcClient(grpcUrl)
 	defer closeConn()
 
 	for _, testCase := range validateTokenTestCases {
@@ -121,7 +121,7 @@ func TestValidateToken(t *testing.T) {
 
 func TestUpdateUser(t *testing.T) {
 	require := require.New(t)
-	client, closeConn, _ := baseSetup.GetGrpcClient(grpcUrl)
+	client, closeConn, _ := commSetup.GetGrpcClient(grpcUrl)
 	defer closeConn()
 
 	for _, testCase := range updateUserTestCases {

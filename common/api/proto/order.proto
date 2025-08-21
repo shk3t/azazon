@@ -1,0 +1,42 @@
+syntax = "proto3";
+
+package order;
+
+option go_package = "common/internal/api/order";
+
+service OrderService {
+    rpc CreateOrder(CreateOrderRequest) returns (CreateOrderResponse);
+    rpc GetOrderInfo(GetOrderInfoRequest) returns (GetOrderInfoResponse);
+}
+
+message Item {
+    int64 id = 1;
+    int64 quantity = 2;
+}
+
+enum OrderStatus {
+    UNKNOWN = 0;
+    CONFIRMED = 1;
+    CANCELLED = 2;
+}
+
+message CreateOrderRequest {
+    string token = 1;
+    repeated Item items = 2;
+    string address = 3;
+}
+
+message CreateOrderResponse { int64 order_id = 1; }
+
+message GetOrderInfoRequest {
+    string token = 1;
+    int64 order_id = 2;
+}
+
+message GetOrderInfoResponse {
+    int64 order_id = 1;
+    repeated Item items = 2;
+    OrderStatus status = 3;
+    string address = 4;
+    string track = 5;
+}

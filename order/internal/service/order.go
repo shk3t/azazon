@@ -1,6 +1,6 @@
 package service
 
-import "base/pkg/grpcutil"
+import "common/pkg/grpcutil"
 
 var NewErr = grpcutil.NewError
 var NewInternalErr = grpcutil.NewInternalError

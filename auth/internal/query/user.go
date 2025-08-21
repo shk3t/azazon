@@ -2,7 +2,7 @@ package query
 
 import (
 	db "auth/internal/database"
-	"base/pkg/model"
+	"common/pkg/model"
 	"context"
 )
 

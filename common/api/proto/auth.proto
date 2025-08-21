@@ -1,0 +1,39 @@
+syntax = "proto3";
+
+package auth;
+
+option go_package = "common/internal/api/auth";
+
+service AuthService {
+    rpc Register(RegisterRequest) returns (RegisterResponse);
+    rpc Login(LoginRequest) returns (LoginResponse);
+    rpc ValidateToken(ValidateTokenRequest) returns (ValidateTokenResponse);
+    rpc UpdateUser(UpdateUserRequest) returns (UpdateUserResponse);
+}
+
+message RegisterRequest {
+    string login = 1;
+    string password = 2;
+}
+
+message RegisterResponse { string token = 1; }
+
+message LoginRequest {
+    string login = 1;
+    string password = 2;
+}
+
+message LoginResponse { string token = 1; }
+
+message ValidateTokenRequest { string token = 1; }
+
+message ValidateTokenResponse { bool valid = 1; }
+
+message UpdateUserRequest {
+    string token = 1;
+    string new_login = 2;
+    string new_password = 3;
+    optional string role_key = 4;
+}
+
+message UpdateUserResponse { string token = 1; }

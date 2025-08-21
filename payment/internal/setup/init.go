@@ -1,10 +1,9 @@
 package setup
 
 import (
-	"base/pkg/log"
-	baseSetup "base/pkg/setup"
+	"common/pkg/log"
+	commSetup "common/pkg/setup"
 	"payment/internal/config"
-	"payment/internal/database"
 	"payment/internal/server"
 )
 
@@ -15,17 +14,13 @@ func initAll(workDir string) error {
 	if err := log.Init(workDir); err != nil {
 		return err
 	}
-	if err := database.ConnectDatabase(workDir); err != nil {
-		return err
-	}
 
 	return nil
 }
 
 func deinitAll() {
 	server.Deinit()
-	database.ConnPool.Close()
 	log.Deinit()
 }
 
-var InitAll, DeinitAll = baseSetup.CreateInitFuncs(initAll, deinitAll)
+var InitAll, DeinitAll = commSetup.CreateInitFuncs(initAll, deinitAll)

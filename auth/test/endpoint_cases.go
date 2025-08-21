@@ -1,7 +1,7 @@
 package authtest
 
 import (
-	"base/pkg/model"
+	"common/pkg/model"
 
 	"google.golang.org/grpc/codes"
 )

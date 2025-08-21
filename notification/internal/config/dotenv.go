@@ -1,7 +1,7 @@
 package config
 
 import (
-	"base/pkg/sugar"
+	"common/pkg/sugar"
 	"fmt"
 	"os"
 	"path/filepath"

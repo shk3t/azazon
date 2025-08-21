@@ -2,7 +2,7 @@ package service
 
 import (
 	"auth/internal/config"
-	"base/pkg/model"
+	"common/pkg/model"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"

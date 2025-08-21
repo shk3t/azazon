@@ -1,6 +1,6 @@
 package notificationtest
 
-import "base/pkg/model"
+import "common/pkg/model"
 
 var orderCreatedTestCases = []struct {
 	order model.OrderEvent

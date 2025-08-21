@@ -1,7 +1,7 @@
 package server
 
 import (
-	"base/api/order"
+	"common/api/order"
 	"order/internal/service"
 
 	"google.golang.org/grpc"

@@ -3,11 +3,11 @@ package service
 import (
 	"auth/internal/config"
 	"auth/internal/store"
-	errpkg "base/pkg/errors"
-	"base/pkg/grpcutil"
-	"base/pkg/model"
-	baseService "base/pkg/service"
-	"base/pkg/sugar"
+	errpkg "common/pkg/errors"
+	"common/pkg/grpcutil"
+	"common/pkg/model"
+	commService "common/pkg/service"
+	"common/pkg/sugar"
 	"context"
 	"errors"
 	"net/http"
@@ -114,7 +114,7 @@ func (s *AuthService) UpdateUser(
 		return nil, NewErr(http.StatusUnauthorized, "Invalid Token")
 	}
 
-	claims, err := baseService.ParseJwtToken(token)
+	claims, err := commService.ParseJwtToken(token)
 	if err != nil {
 		return nil, NewInternalErr(err)
 	}

@@ -1,7 +1,0 @@
-syntax = "proto3";
-
-package notification;
-
-option go_package = "base/internal/api/notification";
-
-service NotificationService {}

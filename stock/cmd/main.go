@@ -1,10 +1,10 @@
 package main
 
 import (
-	"base/pkg/helper"
-	"base/pkg/interceptor"
-	"base/pkg/log"
-	"base/pkg/sugar"
+	"common/pkg/helper"
+	"common/pkg/interceptor"
+	"common/pkg/log"
+	"common/pkg/sugar"
 	"fmt"
 	"net"
 	"path/filepath"

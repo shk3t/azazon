@@ -2,9 +2,9 @@ package server
 
 import (
 	"auth/internal/service"
-	"base/api/auth"
-	conv "base/pkg/conversion"
-	"base/pkg/sugar"
+	"common/api/auth"
+	conv "common/pkg/conversion"
+	"common/pkg/sugar"
 	"context"
 
 	"google.golang.org/grpc"

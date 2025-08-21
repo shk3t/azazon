@@ -1,8 +1,8 @@
 package setup
 
 import (
-	"base/pkg/log"
-	baseSetup "base/pkg/setup"
+	"common/pkg/log"
+	commSetup "common/pkg/setup"
 	"notification/internal/config"
 	"notification/internal/server"
 	"notification/internal/service"
@@ -28,4 +28,4 @@ func deinitAll() {
 	service.DeinitMailer()
 }
 
-var InitAll, DeinitAll = baseSetup.CreateInitFuncs(initAll, deinitAll)
+var InitAll, DeinitAll = commSetup.CreateInitFuncs(initAll, deinitAll)
