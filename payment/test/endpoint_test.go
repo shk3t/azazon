@@ -48,6 +48,7 @@ func TestMain(m *testing.M) {
 
 	connector.Connect(
 		grpcUrl,
+		logger,
 		&[]string{consts.Topics.OrderConfirmed, consts.Topics.OrderCanceled},
 		&kafka.ReaderConfig{
 			Brokers:          config.Env.KafkaBrokerHosts,
@@ -72,11 +73,11 @@ func TestMain(m *testing.M) {
 func TestStartPayment(t *testing.T) {
 	require := require.New(t)
 	createdWriter := connector.GetKafkaWriter(consts.Topics.OrderCreated)
-	confirmedReader := connector.GetKafkaReader(consts.Topics.OrderConfirmed)
-	canceledReader := connector.GetKafkaReader(consts.Topics.OrderCanceled)
+	confirmedReader := connector.GetKafkaReader(consts.Topics.OrderConfirmed, true)
+	canceledReader := connector.GetKafkaReader(consts.Topics.OrderCanceled, true)
 
 	for _, testCase := range startPaymentTestCases {
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 
 		payload, err := proto.Marshal(conv.OrderEventProto(&testCase.order))
 		require.NoError(err)

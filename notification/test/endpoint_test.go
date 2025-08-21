@@ -48,6 +48,7 @@ func TestMain(m *testing.M) {
 
 	connector.Connect(
 		grpcUrl,
+		logger,
 		nil, nil,
 		&[]string{consts.Topics.OrderCreated},
 		&kafka.WriterConfig{Brokers: config.Env.KafkaBrokerHosts},

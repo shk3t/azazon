@@ -3,6 +3,9 @@ package server
 import (
 	"common/api/auth"
 	"common/pkg/setup"
+	"context"
+	"log"
+	"time"
 
 	"github.com/segmentio/kafka-go"
 )
@@ -18,13 +21,14 @@ func NewTestConnector() *TestConnector {
 
 func (c *TestConnector) Connect(
 	grpcUrl string,
+	logger *log.Logger,
 	topicsToRead *[]string,
 	readerConfig *kafka.ReaderConfig,
 	topicsToWrite *[]string,
 	writerConfig *kafka.WriterConfig,
 ) {
 	c.grpcUrl = grpcUrl
-	c.kafkaConnector = NewKafkaConnector()
+	c.kafkaConnector = NewKafkaConnector(logger)
 	c.kafkaConnector.Connect(topicsToRead, readerConfig, topicsToWrite, writerConfig)
 }
 
@@ -36,8 +40,20 @@ func (c *TestConnector) GetGrpcClient() (
 	return setup.GetGrpcClient(c.grpcUrl)
 }
 
-func (c *TestConnector) GetKafkaReader(topic string) *kafka.Reader {
-	return c.kafkaConnector.Readers[topic]
+func (c *TestConnector) GetKafkaReader(topic string, sink bool) *kafka.Reader {
+	reader := c.kafkaConnector.Readers[topic]
+
+	if sink {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		for {
+			if _, err := reader.ReadMessage(ctx); err != nil {
+				break
+			}
+		}
+		cancel()
+	}
+
+	return reader
 }
 
 func (c *TestConnector) GetKafkaWriter(topic string) *kafka.Writer {

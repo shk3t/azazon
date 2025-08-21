@@ -46,7 +46,7 @@ func TestMain(m *testing.M) {
 		os.Exit(1)
 	}
 
-	connector.Connect(grpcUrl, nil, nil, nil, nil)
+	connector.Connect(grpcUrl, logger, nil, nil, nil, nil)
 
 	logger.Println("Running tests...")
 	exitCode := m.Run()

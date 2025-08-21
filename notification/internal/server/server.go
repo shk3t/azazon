@@ -5,7 +5,8 @@ import (
 	"common/api/notification"
 	"common/pkg/consts"
 	"common/pkg/helper"
-	connServer "common/pkg/server"
+	"common/pkg/log"
+	commServer "common/pkg/server"
 	"context"
 	"notification/internal/config"
 	conv "notification/internal/conversion"
@@ -21,13 +22,13 @@ type NotificationServer struct {
 	notification.UnimplementedNotificationServiceServer
 	GrpcServer     *grpc.Server
 	service        *service.NotificationService
-	kafkaConnector *connServer.KafkaConnector
+	kafkaConnector *commServer.KafkaConnector
 }
 
 func NewNotificationServer(opts grpc.ServerOption) *NotificationServer {
 	s := &NotificationServer{
 		service:        service.NewNotificationService(),
-		kafkaConnector: connServer.NewKafkaConnector(),
+		kafkaConnector: commServer.NewKafkaConnector(log.Loggers.Event),
 	}
 
 	s.initKafka()
@@ -40,7 +41,7 @@ func NewNotificationServer(opts grpc.ServerOption) *NotificationServer {
 }
 
 func (s *NotificationServer) initKafka() {
-	readerHandlers := map[string]connServer.KafkaMessageHandlerFunc{
+	readerHandlers := map[string]commServer.KafkaMessageHandlerFunc{
 		consts.Topics.OrderCreated:   s.HandleOrderCreated,
 		consts.Topics.OrderConfirmed: s.HandleOrderConfirmed,
 		consts.Topics.OrderCanceled:  s.HandleOrderCanceled,
@@ -60,6 +61,7 @@ func (s *NotificationServer) initKafka() {
 }
 
 func (s *NotificationServer) HandleOrderCreated(ctx context.Context, msg kafka.Message) error {
+	log.Loggers.Event.Println("ЗАХЕНДЛИЛ!")
 	var in common.OrderEvent
 	if err := proto.Unmarshal(msg.Value, &in); err != nil {
 		return err
@@ -68,6 +70,7 @@ func (s *NotificationServer) HandleOrderCreated(ctx context.Context, msg kafka.M
 }
 
 func (s *NotificationServer) HandleOrderConfirmed(ctx context.Context, msg kafka.Message) error {
+	log.Loggers.Event.Println("ЗАХЕНДЛИЛ!")
 	var in common.OrderEvent
 	if err := proto.Unmarshal(msg.Value, &in); err != nil {
 		return err
@@ -76,6 +79,7 @@ func (s *NotificationServer) HandleOrderConfirmed(ctx context.Context, msg kafka
 }
 
 func (s *NotificationServer) HandleOrderCanceled(ctx context.Context, msg kafka.Message) error {
+	log.Loggers.Event.Println("ЗАХЕНДЛИЛ!")
 	var in common.OrderEvent
 	if err := proto.Unmarshal(msg.Value, &in); err != nil {
 		return err
