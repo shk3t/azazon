@@ -10,25 +10,25 @@ import (
 type OrderServer struct {
 	order.UnimplementedOrderServiceServer
 	GrpcServer *grpc.Server
-	service    service.OrderService
+	service    *service.OrderService
 }
 
 func NewOrderServer(opts grpc.ServerOption) *OrderServer {
-	srv := &OrderServer{
-		service: *service.NewOrderService(),
+	s := &OrderServer{
+		service: service.NewOrderService(),
 	}
 
-	srv.GrpcServer = grpc.NewServer(opts)
-	order.RegisterOrderServiceServer(srv.GrpcServer, srv)
+	s.GrpcServer = grpc.NewServer(opts)
+	order.RegisterOrderServiceServer(s.GrpcServer, s)
 
-	allServers = append(allServers, srv)
-	return srv
+	allServers = append(allServers, s)
+	return s
 }
 
 var allServers []*OrderServer
 
 func Deinit() {
-	for _, srv := range allServers {
-		srv.GrpcServer.GracefulStop()
+	for _, s := range allServers {
+		s.GrpcServer.GracefulStop()
 	}
 }

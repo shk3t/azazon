@@ -5,11 +5,11 @@ import (
 	"common/api/notification"
 	"common/pkg/consts"
 	"common/pkg/helper"
+	connServer "common/pkg/server"
 	"context"
 	"notification/internal/config"
 	conv "notification/internal/conversion"
 	"notification/internal/service"
-	"sync"
 	"time"
 
 	"github.com/segmentio/kafka-go"
@@ -19,47 +19,43 @@ import (
 
 type NotificationServer struct {
 	notification.UnimplementedNotificationServiceServer
-	GrpcServer   *grpc.Server
-	service      service.NotificationService
-	kafkaCancel  context.CancelFunc
-	kafkaReaders map[string]*kafka.Reader
+	GrpcServer     *grpc.Server
+	service        *service.NotificationService
+	kafkaConnector *connServer.KafkaConnector
 }
 
 func NewNotificationServer(opts grpc.ServerOption) *NotificationServer {
-	srv := &NotificationServer{
-		service:      *service.NewNotificationService(),
-		kafkaReaders: map[string]*kafka.Reader{},
+	s := &NotificationServer{
+		service:        service.NewNotificationService(),
+		kafkaConnector: connServer.NewKafkaConnector(),
 	}
 
-	var kafkaCtx context.Context
-	kafkaCtx, srv.kafkaCancel = context.WithCancel(context.Background())
-	srv.initKafkaReaders(kafkaCtx)
+	s.initKafka()
 
-	srv.GrpcServer = grpc.NewServer(opts)
-	notification.RegisterNotificationServiceServer(srv.GrpcServer, srv)
+	s.GrpcServer = grpc.NewServer(opts)
+	notification.RegisterNotificationServiceServer(s.GrpcServer, s)
 
-	allServers = append(allServers, srv)
-	return srv
+	allServers = append(allServers, s)
+	return s
 }
 
-func (srv *NotificationServer) initKafkaReaders(ctx context.Context) {
-	handlers := map[string]helper.KafkaMessageHandlerFunc{
-		consts.Topics.OrderCreated:   srv.HandleOrderCreated,
-		consts.Topics.OrderConfirmed: srv.HandleOrderConfirmed,
-		consts.Topics.OrderCanceled:  srv.HandleOrderCanceled,
+func (s *NotificationServer) initKafka() {
+	readerHandlers := map[string]connServer.KafkaMessageHandlerFunc{
+		consts.Topics.OrderCreated:   s.HandleOrderCreated,
+		consts.Topics.OrderConfirmed: s.HandleOrderConfirmed,
+		consts.Topics.OrderCanceled:  s.HandleOrderCanceled,
+	}
+	readerTopics := helper.MapKeys(readerHandlers)
+	readerConfig := kafka.ReaderConfig{
+		Brokers:          config.Env.KafkaBrokerHosts,
+		GroupID:          "notification_group",
+		StartOffset:      kafka.LastOffset,
+		RebalanceTimeout: 2 * time.Second,
 	}
 
-	for topic, handlerFunc := range handlers {
-		reader := kafka.NewReader(kafka.ReaderConfig{
-			Brokers:          config.Env.KafkaBrokerHosts,
-			Topic:            topic,
-			GroupID:          "notification_group",
-			StartOffset:      kafka.LastOffset,
-			RebalanceTimeout: 2 * time.Second,
-		})
-		srv.kafkaReaders[topic] = reader
-
-		go helper.KafkaBgRead(ctx, reader, handlerFunc, topic)
+	s.kafkaConnector.Connect(&readerTopics, &readerConfig, nil, nil)
+	for topic, handler := range readerHandlers {
+		s.kafkaConnector.AttachReaderHandler(topic, handler)
 	}
 }
 
@@ -90,19 +86,8 @@ func (s *NotificationServer) HandleOrderCanceled(ctx context.Context, msg kafka.
 var allServers []*NotificationServer
 
 func Deinit() {
-	for _, srv := range allServers {
-		srv.kafkaCancel()
-
-		var wg sync.WaitGroup
-		for _, reader := range srv.kafkaReaders {
-			wg.Add(1)
-			go func() {
-				reader.Close()
-				wg.Done()
-			}()
-		}
-		wg.Wait()
-
-		srv.GrpcServer.GracefulStop()
+	for _, s := range allServers {
+		s.kafkaConnector.Disconnect()
+		s.GrpcServer.GracefulStop()
 	}
 }

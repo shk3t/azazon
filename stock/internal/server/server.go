@@ -10,25 +10,25 @@ import (
 type StockServer struct {
 	stock.UnimplementedStockServiceServer
 	GrpcServer *grpc.Server
-	service    service.StockService
+	service    *service.StockService
 }
 
 func NewStockServer(opts grpc.ServerOption) *StockServer {
-	srv := &StockServer{
-		service: *service.NewStockService(),
+	s := &StockServer{
+		service: service.NewStockService(),
 	}
 
-	srv.GrpcServer = grpc.NewServer(opts)
-	stock.RegisterStockServiceServer(srv.GrpcServer, srv)
+	s.GrpcServer = grpc.NewServer(opts)
+	stock.RegisterStockServiceServer(s.GrpcServer, s)
 
-	allServers = append(allServers, srv)
-	return srv
+	allServers = append(allServers, s)
+	return s
 }
 
 var allServers []*StockServer
 
 func Deinit() {
-	for _, srv := range allServers {
-		srv.GrpcServer.GracefulStop()
+	for _, s := range allServers {
+		s.GrpcServer.GracefulStop()
 	}
 }

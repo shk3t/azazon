@@ -8,6 +8,7 @@ import (
 	"common/api/auth"
 	errpkg "common/pkg/errors"
 	"common/pkg/log"
+	commServer "common/pkg/server"
 	"common/pkg/service"
 	commSetup "common/pkg/setup"
 	"common/pkg/sugar"
@@ -22,7 +23,7 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-var grpcUrl string
+var connector = commServer.NewTestConnector()
 
 func TestMain(m *testing.M) {
 	workDir := filepath.Dir(sugar.Default(os.Getwd()))
@@ -35,7 +36,7 @@ func TestMain(m *testing.M) {
 	}
 
 	logger := log.Loggers.Test
-	grpcUrl = fmt.Sprintf("localhost:%d", config.Env.TestPort)
+	grpcUrl := fmt.Sprintf("localhost:%d", config.Env.TestPort)
 
 	cmd, err := commSetup.ServerUp(workDir, grpcUrl, logger)
 	if err != nil {
@@ -45,18 +46,21 @@ func TestMain(m *testing.M) {
 		os.Exit(1)
 	}
 
+	connector.Connect(grpcUrl, nil, nil, nil, nil)
+
 	logger.Println("Running tests...")
 	exitCode := m.Run()
 	logger.Println("Test run finished")
 
 	commSetup.ServerDown(cmd, logger)
+	connector.Disconnect()
 	setup.DeinitAll()
 	os.Exit(exitCode)
 }
 
 func TestRegister(t *testing.T) {
 	require := require.New(t)
-	client, closeConn, _ := commSetup.GetGrpcClient(grpcUrl)
+	client, closeConn, _ := connector.GetGrpcClient()
 	defer closeConn()
 
 	for _, testCase := range registerTestCases {
@@ -80,7 +84,7 @@ func TestRegister(t *testing.T) {
 
 func TestLogin(t *testing.T) {
 	require := require.New(t)
-	client, closeConn, _ := commSetup.GetGrpcClient(grpcUrl)
+	client, closeConn, _ := connector.GetGrpcClient()
 	defer closeConn()
 
 	for _, testCase := range loginTestCases {
@@ -99,7 +103,7 @@ func TestLogin(t *testing.T) {
 
 func TestValidateToken(t *testing.T) {
 	require := require.New(t)
-	client, closeConn, _ := commSetup.GetGrpcClient(grpcUrl)
+	client, closeConn, _ := connector.GetGrpcClient()
 	defer closeConn()
 
 	for _, testCase := range validateTokenTestCases {
@@ -121,7 +125,7 @@ func TestValidateToken(t *testing.T) {
 
 func TestUpdateUser(t *testing.T) {
 	require := require.New(t)
-	client, closeConn, _ := commSetup.GetGrpcClient(grpcUrl)
+	client, closeConn, _ := connector.GetGrpcClient()
 	defer closeConn()
 
 	for _, testCase := range updateUserTestCases {

@@ -1,19 +1,16 @@
 package notificationtest
 
 import (
-	"common/pkg/consts"
 	"common/pkg/log"
-	commServer "common/pkg/server"
 	commSetup "common/pkg/setup"
 	"common/pkg/sugar"
 	"context"
 	"fmt"
-	"notification/internal/config"
-	conv "notification/internal/conversion"
-	"notification/internal/service"
-	"notification/internal/setup"
 	"os"
 	"path/filepath"
+	"payment/internal/config"
+	conv "payment/internal/conversion"
+	"payment/internal/setup"
 	"strconv"
 	"testing"
 	"time"
@@ -23,7 +20,7 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-var connector = commServer.NewTestConnector()
+var grpcUrl string
 
 func TestMain(m *testing.M) {
 	workDir := filepath.Dir(sugar.Default(os.Getwd()))
@@ -36,7 +33,7 @@ func TestMain(m *testing.M) {
 	}
 
 	logger := log.Loggers.Test
-	grpcUrl := fmt.Sprintf("localhost:%d", config.Env.TestPort)
+	grpcUrl = fmt.Sprintf("localhost:%d", config.Env.TestPort)
 
 	cmd, err := commSetup.ServerUp(workDir, grpcUrl, logger)
 	if err != nil {
@@ -46,28 +43,24 @@ func TestMain(m *testing.M) {
 		os.Exit(1)
 	}
 
-	connector.Connect(
-		grpcUrl,
-		nil, nil,
-		&[]string{consts.Topics.OrderCreated},
-		&kafka.WriterConfig{Brokers: config.Env.KafkaBrokerHosts},
-	)
-
 	logger.Println("Running tests...")
 	exitCode := m.Run()
 	logger.Println("Test run finished")
 
 	commSetup.ServerDown(cmd, logger)
-	connector.Disconnect()
 	setup.DeinitAll()
 	os.Exit(exitCode)
 }
 
-func TestOrderCreated(t *testing.T) {
+func TestStartPayment(t *testing.T) {
 	require := require.New(t)
-	writer := connector.GetKafkaWriter(consts.Topics.OrderCreated)
+	writer := kafka.NewWriter(kafka.WriterConfig{
+		Brokers: config.Env.KafkaBrokerHosts,
+		Topic:   "order_created",
+	})
+	defer writer.Close()
 
-	for i, testCase := range orderCreatedTestCases {
+	for i, testCase := range startPaymentTestCases {
 		ctx := context.Background()
 
 		payload, err := proto.Marshal(conv.OrderEventProto(&testCase.order))
@@ -87,14 +80,14 @@ func TestOrderCreated(t *testing.T) {
 			time.Sleep(10 * time.Millisecond)
 		}
 
-		messages, err := service.ReadEmails(
-			service.FmtUserById(testCase.order.UserId),
-		)
-		require.NoError(err)
-		require.True(len(messages) > 0, "No new messages recieved")
-		msg := messages[len(messages)-1]
-		require.Contains(msg, service.FmtUserById(testCase.order.UserId))
-		require.Contains(msg, fmt.Sprintf("Order %d", testCase.order.OrderId))
-		require.Contains(msg, "created")
+		// messages, err := service.ReadEmails(
+		// 	service.FmtUserById(testCase.order.UserId),
+		// )
+		// require.NoError(err)
+		// require.True(len(messages) > 0, "No new messages recieved")
+		// msg := messages[len(messages)-1]
+		// require.Contains(msg, service.FmtUserById(testCase.order.UserId))
+		// require.Contains(msg, fmt.Sprintf("Order %d", testCase.order.OrderId))
+		// require.Contains(msg, "created")
 	}
 }

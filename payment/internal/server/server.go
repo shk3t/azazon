@@ -5,11 +5,11 @@ import (
 	"common/api/payment"
 	"common/pkg/consts"
 	"common/pkg/helper"
+	connServer "common/pkg/server"
 	"context"
 	"payment/internal/config"
 	conv "payment/internal/conversion"
 	"payment/internal/service"
-	"sync"
 	"time"
 
 	"github.com/segmentio/kafka-go"
@@ -19,64 +19,51 @@ import (
 
 type PaymentServer struct {
 	payment.UnimplementedPaymentServiceServer
-	GrpcServer   *grpc.Server
-	service      service.PaymentService
-	kafkaCancel  context.CancelFunc
-	kafkaReaders map[string]*kafka.Reader
-	kafkaWriters map[string]*kafka.Writer
+	GrpcServer     *grpc.Server
+	service        *service.PaymentService
+	kafkaConnector *connServer.KafkaConnector
 }
 
 func NewPaymentServer(opts grpc.ServerOption) *PaymentServer {
-	srv := &PaymentServer{
-		service:      *service.NewPaymentService(),
-		kafkaReaders: map[string]*kafka.Reader{},
-		kafkaWriters: map[string]*kafka.Writer{},
+	s := &PaymentServer{
+		service:        service.NewPaymentService(),
+		kafkaConnector: connServer.NewKafkaConnector(),
 	}
 
-	var kafkaCtx context.Context
-	kafkaCtx, srv.kafkaCancel = context.WithCancel(context.Background())
-	srv.initKafkaReaders(kafkaCtx)
-	srv.initKafkaWriters(kafkaCtx)
+	s.initKafka()
 
-	srv.GrpcServer = grpc.NewServer(opts)
-	payment.RegisterPaymentServiceServer(srv.GrpcServer, srv)
+	s.GrpcServer = grpc.NewServer(opts)
+	payment.RegisterPaymentServiceServer(s.GrpcServer, s)
 
-	allServers = append(allServers, srv)
-	return srv
+	allServers = append(allServers, s)
+	return s
 }
 
-func (srv *PaymentServer) initKafkaReaders(ctx context.Context) {
-	handlers := map[string]helper.KafkaMessageHandlerFunc{
-		consts.Topics.OrderCreated: srv.StartPayment,
+func (s *PaymentServer) initKafka() {
+	readerHandlers := map[string]connServer.KafkaMessageHandlerFunc{
+		consts.Topics.OrderCreated: s.StartPayment,
+	}
+	readerTopics := helper.MapKeys(readerHandlers)
+	readerConfig := kafka.ReaderConfig{
+		Brokers:          config.Env.KafkaBrokerHosts,
+		GroupID:          "payment_group",
+		StartOffset:      kafka.LastOffset,
+		RebalanceTimeout: 2 * time.Second,
 	}
 
-	for topic, handlerFunc := range handlers {
-		reader := kafka.NewReader(kafka.ReaderConfig{
-			Brokers:          config.Env.KafkaBrokerHosts,
-			Topic:            topic,
-			GroupID:          "payment_group",
-			StartOffset:      kafka.LastOffset,
-			RebalanceTimeout: 2 * time.Second,
-		})
-		srv.kafkaReaders[topic] = reader
-
-		go helper.KafkaBgRead(ctx, reader, handlerFunc, topic)
+	writerConfig := kafka.WriterConfig{
+		Brokers: config.Env.KafkaBrokerHosts,
 	}
-}
+	writerTopics := []string{
+		consts.Topics.OrderConfirmed,
+		consts.Topics.OrderCanceled,
+	}
 
-func (srv *PaymentServer) initKafkaWriters(ctx context.Context) {
-	topics := []string{consts.Topics.OrderConfirmed, consts.Topics.OrderCanceled}
-
-	for _, topic := range topics {
-		writer := kafka.NewWriter(kafka.WriterConfig{
-			Brokers: config.Env.KafkaBrokerHosts,
-			Topic:   topic,
-		})
-		srv.kafkaWriters[topic] = writer
+	s.kafkaConnector.Connect(&readerTopics, &readerConfig, &writerTopics, &writerConfig)
+	for topic, handler := range readerHandlers {
+		s.kafkaConnector.AttachReaderHandler(topic, handler)
 	}
 }
-
-var allServers []*PaymentServer
 
 func (s *PaymentServer) StartPayment(ctx context.Context, msg kafka.Message) error {
 	var in common.OrderEvent
@@ -87,35 +74,19 @@ func (s *PaymentServer) StartPayment(ctx context.Context, msg kafka.Message) err
 	err := s.service.StartPayment(ctx, *conv.OrderEventModel(&in))
 
 	if err == nil {
-		s.kafkaWriters[consts.Topics.OrderConfirmed].WriteMessages(ctx, msg)
+		s.kafkaConnector.Writers[consts.Topics.OrderConfirmed].WriteMessages(ctx, msg)
 	} else {
-		s.kafkaWriters[consts.Topics.OrderCanceled].WriteMessages(ctx, msg)
+		s.kafkaConnector.Writers[consts.Topics.OrderCanceled].WriteMessages(ctx, msg)
 	}
 
 	return err
 }
 
+var allServers []*PaymentServer
+
 func Deinit() {
-	for _, srv := range allServers {
-		srv.kafkaCancel()
-
-		var wg sync.WaitGroup
-		for _, writer := range srv.kafkaWriters {
-			wg.Add(1)
-			go func() {
-				writer.Close()
-				wg.Done()
-			}()
-		}
-		for _, reader := range srv.kafkaReaders {
-			wg.Add(1)
-			go func() {
-				reader.Close()
-				wg.Done()
-			}()
-		}
-		wg.Wait()
-
-		srv.GrpcServer.GracefulStop()
+	for _, s := range allServers {
+		s.kafkaConnector.Disconnect()
+		s.GrpcServer.GracefulStop()
 	}
 }
