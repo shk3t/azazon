@@ -65,7 +65,7 @@ func TestMain(m *testing.M) {
 
 func TestOrderCreated(t *testing.T) {
 	require := require.New(t)
-	writer := connector.GetKafkaWriter(consts.Topics.OrderCreated)
+	createdWriter := connector.GetKafkaWriter(consts.Topics.OrderCreated)
 
 	for i, testCase := range orderCreatedTestCases {
 		ctx := context.Background()
@@ -73,7 +73,7 @@ func TestOrderCreated(t *testing.T) {
 		payload, err := proto.Marshal(conv.OrderEventProto(&testCase.order))
 		require.NoError(err)
 
-		err = writer.WriteMessages(ctx,
+		err = createdWriter.WriteMessages(ctx,
 			kafka.Message{
 				Key:   []byte(strconv.Itoa(testCase.order.OrderId)),
 				Value: payload,

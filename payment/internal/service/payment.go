@@ -23,7 +23,7 @@ func (s *PaymentService) StartPayment(
 ) error {
 	balance := 10000
 
-	time.Sleep(2 * time.Second)
+	time.Sleep(1 * time.Second)
 
 	if body.FullPrice > balance {
 		return errors.New("Not enough money")

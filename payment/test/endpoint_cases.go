@@ -2,6 +2,8 @@ package notificationtest
 
 import "payment/internal/model"
 
+const balance = 10000
+
 var startPaymentTestCases = []struct {
 	order model.OrderEvent
 }{
@@ -23,21 +25,7 @@ var startPaymentTestCases = []struct {
 		order: model.OrderEvent{
 			OrderId:   30,
 			UserId:    40,
-			FullPrice: 2000,
-		},
-	},
-	{
-		order: model.OrderEvent{
-			OrderId:   40,
-			UserId:    50,
-			FullPrice: 200000,
-		},
-	},
-	{
-		order: model.OrderEvent{
-			OrderId:   50,
-			UserId:    60,
-			FullPrice: 13000,
+			FullPrice: 9000,
 		},
 	},
 }

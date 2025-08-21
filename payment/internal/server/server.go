@@ -73,10 +73,11 @@ func (s *PaymentServer) StartPayment(ctx context.Context, msg kafka.Message) err
 
 	err := s.service.StartPayment(ctx, *conv.OrderEventModel(&in))
 
+	newMsg := kafka.Message{Key: msg.Key, Value: msg.Value}
 	if err == nil {
-		s.kafkaConnector.Writers[consts.Topics.OrderConfirmed].WriteMessages(ctx, msg)
+		err = s.kafkaConnector.Writers[consts.Topics.OrderConfirmed].WriteMessages(ctx, newMsg)
 	} else {
-		s.kafkaConnector.Writers[consts.Topics.OrderCanceled].WriteMessages(ctx, msg)
+		err = s.kafkaConnector.Writers[consts.Topics.OrderCanceled].WriteMessages(ctx, newMsg)
 	}
 
 	return err

@@ -1,7 +1,10 @@
 package notificationtest
 
 import (
+	"common/api/common"
+	"common/pkg/consts"
 	"common/pkg/log"
+	commServer "common/pkg/server"
 	commSetup "common/pkg/setup"
 	"common/pkg/sugar"
 	"context"
@@ -20,7 +23,7 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-var grpcUrl string
+var connector = commServer.NewTestConnector()
 
 func TestMain(m *testing.M) {
 	workDir := filepath.Dir(sugar.Default(os.Getwd()))
@@ -33,7 +36,7 @@ func TestMain(m *testing.M) {
 	}
 
 	logger := log.Loggers.Test
-	grpcUrl = fmt.Sprintf("localhost:%d", config.Env.TestPort)
+	grpcUrl := fmt.Sprintf("localhost:%d", config.Env.TestPort)
 
 	cmd, err := commSetup.ServerUp(workDir, grpcUrl, logger)
 	if err != nil {
@@ -43,30 +46,42 @@ func TestMain(m *testing.M) {
 		os.Exit(1)
 	}
 
+	connector.Connect(
+		grpcUrl,
+		&[]string{consts.Topics.OrderConfirmed, consts.Topics.OrderCanceled},
+		&kafka.ReaderConfig{
+			Brokers:          config.Env.KafkaBrokerHosts,
+			GroupID:          "payment_test_group",
+			StartOffset:      kafka.LastOffset,
+			RebalanceTimeout: 2 * time.Second,
+		},
+		&[]string{consts.Topics.OrderCreated},
+		&kafka.WriterConfig{Brokers: config.Env.KafkaBrokerHosts},
+	)
+
 	logger.Println("Running tests...")
 	exitCode := m.Run()
 	logger.Println("Test run finished")
 
 	commSetup.ServerDown(cmd, logger)
+	connector.Disconnect()
 	setup.DeinitAll()
 	os.Exit(exitCode)
 }
 
 func TestStartPayment(t *testing.T) {
 	require := require.New(t)
-	writer := kafka.NewWriter(kafka.WriterConfig{
-		Brokers: config.Env.KafkaBrokerHosts,
-		Topic:   "order_created",
-	})
-	defer writer.Close()
+	createdWriter := connector.GetKafkaWriter(consts.Topics.OrderCreated)
+	confirmedReader := connector.GetKafkaReader(consts.Topics.OrderConfirmed)
+	canceledReader := connector.GetKafkaReader(consts.Topics.OrderCanceled)
 
-	for i, testCase := range startPaymentTestCases {
-		ctx := context.Background()
+	for _, testCase := range startPaymentTestCases {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 
 		payload, err := proto.Marshal(conv.OrderEventProto(&testCase.order))
 		require.NoError(err)
 
-		err = writer.WriteMessages(ctx,
+		err = createdWriter.WriteMessages(ctx,
 			kafka.Message{
 				Key:   []byte(strconv.Itoa(testCase.order.OrderId)),
 				Value: payload,
@@ -74,20 +89,19 @@ func TestStartPayment(t *testing.T) {
 		)
 		require.NoError(err)
 
-		if i == 0 {
-			time.Sleep(3 * time.Second)
-		} else {
-			time.Sleep(10 * time.Millisecond)
-		}
+		reader := sugar.If(testCase.order.FullPrice <= balance, confirmedReader, canceledReader)
+		msg, err := reader.ReadMessage(ctx)
+		require.NoError(err)
 
-		// messages, err := service.ReadEmails(
-		// 	service.FmtUserById(testCase.order.UserId),
-		// )
-		// require.NoError(err)
-		// require.True(len(messages) > 0, "No new messages recieved")
-		// msg := messages[len(messages)-1]
-		// require.Contains(msg, service.FmtUserById(testCase.order.UserId))
-		// require.Contains(msg, fmt.Sprintf("Order %d", testCase.order.OrderId))
-		// require.Contains(msg, "created")
+		var out common.OrderEvent
+		err = proto.Unmarshal(msg.Value, &out)
+		require.NoError(err)
+
+		resultOrder := conv.OrderEventModel(&out)
+		require.Equal(testCase.order.OrderId, resultOrder.OrderId)
+		require.Equal(testCase.order.UserId, resultOrder.UserId)
+		require.Equal(testCase.order.FullPrice, resultOrder.FullPrice)
+
+		cancel()
 	}
 }
