@@ -2,9 +2,9 @@ package service
 
 import (
 	"common/pkg/grpcutil"
-	"common/pkg/model"
 	"context"
 	"fmt"
+	"notification/internal/model"
 )
 
 var NewErr = grpcutil.NewError

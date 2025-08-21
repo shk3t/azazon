@@ -1,9 +1,9 @@
 package server
 
 import (
+	conv "auth/internal/conversion"
 	"auth/internal/service"
 	"common/api/auth"
-	conv "common/pkg/conversion"
 	"common/pkg/sugar"
 	"context"
 
@@ -54,11 +54,11 @@ func (s *AuthServer) ValidateToken(
 	ctx context.Context,
 	in *auth.ValidateTokenRequest,
 ) (*auth.ValidateTokenResponse, error) {
-	isValid, err := s.service.IsTokenValid(ctx, in.Token)
+	err := s.service.ValidateToken(ctx, in.Token)
 	if err != nil {
 		return nil, err.Grpc()
 	}
-	return &auth.ValidateTokenResponse{Valid: isValid}, nil
+	return &auth.ValidateTokenResponse{Valid: true}, nil
 }
 
 func (s *AuthServer) UpdateUser(

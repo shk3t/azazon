@@ -2,12 +2,12 @@ package authtest
 
 import (
 	"auth/internal/config"
+	conv "auth/internal/conversion"
+	"auth/internal/model"
 	"auth/internal/setup"
 	"common/api/auth"
-	conv "common/pkg/conversion"
 	errpkg "common/pkg/errors"
 	"common/pkg/log"
-	"common/pkg/model"
 	"common/pkg/service"
 	commSetup "common/pkg/setup"
 	"common/pkg/sugar"
@@ -150,7 +150,7 @@ func TestUpdateUser(t *testing.T) {
 		claims, err := service.ParseJwtToken(resp.Token)
 		require.NoError(err)
 		require.Equal(testCase.newUser.Login, claims.Login)
-		require.Equal(testCase.newUser.Role, claims.Role)
+		require.Equal(string(testCase.newUser.Role), claims.Role)
 
 		respLog, err := client.Login(ctx, conv.LoginRequest(&testCase.newUser))
 		st, ok = status.FromError(err)
@@ -159,6 +159,6 @@ func TestUpdateUser(t *testing.T) {
 		claims, err = service.ParseJwtToken(respLog.Token)
 		require.NoError(err)
 		require.Equal(testCase.newUser.Login, claims.Login)
-		require.Equal(testCase.newUser.Role, claims.Role)
+		require.Equal(string(testCase.newUser.Role), claims.Role)
 	}
 }

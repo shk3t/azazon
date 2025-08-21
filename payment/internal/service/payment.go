@@ -2,8 +2,10 @@ package service
 
 import (
 	"common/pkg/grpcutil"
-	"common/pkg/model"
 	"context"
+	"errors"
+	"payment/internal/model"
+	"time"
 )
 
 var NewErr = grpcutil.NewError
@@ -21,11 +23,11 @@ func (s *PaymentService) StartPayment(
 ) error {
 	balance := 10000
 
-	if body.FullPrice > balance {
-		// TODO: cancel
-	}
+	time.Sleep(2 * time.Second)
 
-	// TODO: confirm
+	if body.FullPrice > balance {
+		return errors.New("Not enough money")
+	}
 
 	return nil
 }

@@ -2,7 +2,7 @@ package conversion
 
 import (
 	"common/api/common"
-	"common/pkg/model"
+	"payment/internal/model"
 )
 
 func OrderEventModel(o *common.OrderEvent) *model.OrderEvent {

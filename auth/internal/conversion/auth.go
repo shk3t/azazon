@@ -2,7 +2,7 @@ package conversion
 
 import (
 	"common/api/auth"
-	"common/pkg/model"
+	"auth/internal/model"
 )
 
 func User[R *auth.RegisterRequest | *auth.LoginRequest | *auth.UpdateUserRequest](r R) *model.User {

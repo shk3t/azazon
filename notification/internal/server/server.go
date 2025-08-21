@@ -3,10 +3,11 @@ package server
 import (
 	"common/api/common"
 	"common/api/notification"
-	conv "common/pkg/conversion"
+	"common/pkg/consts"
 	"common/pkg/helper"
 	"context"
 	"notification/internal/config"
+	conv "notification/internal/conversion"
 	"notification/internal/service"
 	"sync"
 	"time"
@@ -21,12 +22,13 @@ type NotificationServer struct {
 	GrpcServer   *grpc.Server
 	service      service.NotificationService
 	kafkaCancel  context.CancelFunc
-	kafkaReaders []*kafka.Reader
+	kafkaReaders map[string]*kafka.Reader
 }
 
 func NewNotificationServer(opts grpc.ServerOption) *NotificationServer {
 	srv := &NotificationServer{
-		service: *service.NewNotificationService(),
+		service:      *service.NewNotificationService(),
+		kafkaReaders: map[string]*kafka.Reader{},
 	}
 
 	var kafkaCtx context.Context
@@ -42,9 +44,9 @@ func NewNotificationServer(opts grpc.ServerOption) *NotificationServer {
 
 func (srv *NotificationServer) initKafkaReaders(ctx context.Context) {
 	handlers := map[string]helper.KafkaMessageHandlerFunc{
-		"order_created":   srv.HandleOrderCreated,
-		"order_confirmed": srv.HandleOrderConfirmed,
-		"order_canceled":  srv.HandleOrderCanceled,
+		consts.Topics.OrderCreated:   srv.HandleOrderCreated,
+		consts.Topics.OrderConfirmed: srv.HandleOrderConfirmed,
+		consts.Topics.OrderCanceled:  srv.HandleOrderCanceled,
 	}
 
 	for topic, handlerFunc := range handlers {
@@ -55,7 +57,7 @@ func (srv *NotificationServer) initKafkaReaders(ctx context.Context) {
 			StartOffset:      kafka.LastOffset,
 			RebalanceTimeout: 2 * time.Second,
 		})
-		srv.kafkaReaders = append(srv.kafkaReaders, reader)
+		srv.kafkaReaders[topic] = reader
 
 		go helper.KafkaBgRead(ctx, reader, handlerFunc, topic)
 	}

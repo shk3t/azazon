@@ -2,10 +2,10 @@ package service
 
 import (
 	"auth/internal/config"
+	"auth/internal/model"
 	"auth/internal/store"
 	errpkg "common/pkg/errors"
 	"common/pkg/grpcutil"
-	"common/pkg/model"
 	commService "common/pkg/service"
 	"common/pkg/sugar"
 	"context"
@@ -92,15 +92,15 @@ func (s *AuthService) Login(
 	return &model.AuthResponse{Token: token}, nil
 }
 
-func (s *AuthService) IsTokenValid(
+func (s *AuthService) ValidateToken(
 	ctx context.Context,
 	token string,
-) (bool, *grpcutil.HandlerError) {
+) *grpcutil.HandlerError {
 	err := validateJwtToken(token)
 	if err != nil {
-		return false, NewErr(http.StatusUnauthorized, "Invalid Token")
+		return NewErr(http.StatusUnauthorized, "Invalid Token")
 	}
-	return true, nil
+	return nil
 }
 
 func (s *AuthService) UpdateUser(

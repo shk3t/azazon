@@ -1,13 +1,13 @@
 package notificationtest
 
 import (
-	conv "common/pkg/conversion"
 	"common/pkg/log"
 	commSetup "common/pkg/setup"
 	"common/pkg/sugar"
 	"context"
 	"fmt"
 	"notification/internal/config"
+	conv "notification/internal/conversion"
 	"notification/internal/service"
 	"notification/internal/setup"
 	"os"

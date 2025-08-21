@@ -1,16 +1,20 @@
 package server
 
 import (
+	"common/api/common"
 	"common/api/payment"
+	"common/pkg/consts"
 	"common/pkg/helper"
 	"context"
 	"payment/internal/config"
+	conv "payment/internal/conversion"
 	"payment/internal/service"
 	"sync"
 	"time"
 
 	"github.com/segmentio/kafka-go"
 	"google.golang.org/grpc"
+	"google.golang.org/protobuf/proto"
 )
 
 type PaymentServer struct {
@@ -18,13 +22,15 @@ type PaymentServer struct {
 	GrpcServer   *grpc.Server
 	service      service.PaymentService
 	kafkaCancel  context.CancelFunc
-	kafkaReaders []*kafka.Reader
-	kafkaWriters []*kafka.Writer
+	kafkaReaders map[string]*kafka.Reader
+	kafkaWriters map[string]*kafka.Writer
 }
 
 func NewPaymentServer(opts grpc.ServerOption) *PaymentServer {
 	srv := &PaymentServer{
-		service: *service.NewPaymentService(),
+		service:      *service.NewPaymentService(),
+		kafkaReaders: map[string]*kafka.Reader{},
+		kafkaWriters: map[string]*kafka.Writer{},
 	}
 
 	var kafkaCtx context.Context
@@ -41,7 +47,7 @@ func NewPaymentServer(opts grpc.ServerOption) *PaymentServer {
 
 func (srv *PaymentServer) initKafkaReaders(ctx context.Context) {
 	handlers := map[string]helper.KafkaMessageHandlerFunc{
-		"order_created": srv.StartPayment,
+		consts.Topics.OrderCreated: srv.StartPayment,
 	}
 
 	for topic, handlerFunc := range handlers {
@@ -52,28 +58,41 @@ func (srv *PaymentServer) initKafkaReaders(ctx context.Context) {
 			StartOffset:      kafka.LastOffset,
 			RebalanceTimeout: 2 * time.Second,
 		})
-		srv.kafkaReaders = append(srv.kafkaReaders, reader)
+		srv.kafkaReaders[topic] = reader
 
 		go helper.KafkaBgRead(ctx, reader, handlerFunc, topic)
 	}
 }
 
 func (srv *PaymentServer) initKafkaWriters(ctx context.Context) {
-	topics := []string{"order_confirmed", "order_canceled"}
+	topics := []string{consts.Topics.OrderConfirmed, consts.Topics.OrderCanceled}
 
 	for _, topic := range topics {
 		writer := kafka.NewWriter(kafka.WriterConfig{
 			Brokers: config.Env.KafkaBrokerHosts,
 			Topic:   topic,
 		})
-		srv.kafkaWriters = append(srv.kafkaWriters, writer)
+		srv.kafkaWriters[topic] = writer
 	}
 }
 
 var allServers []*PaymentServer
 
 func (s *PaymentServer) StartPayment(ctx context.Context, msg kafka.Message) error {
-	return nil
+	var in common.OrderEvent
+	if err := proto.Unmarshal(msg.Value, &in); err != nil {
+		return err
+	}
+
+	err := s.service.StartPayment(ctx, *conv.OrderEventModel(&in))
+
+	if err == nil {
+		s.kafkaWriters[consts.Topics.OrderConfirmed].WriteMessages(ctx, msg)
+	} else {
+		s.kafkaWriters[consts.Topics.OrderCanceled].WriteMessages(ctx, msg)
+	}
+
+	return err
 }
 
 func Deinit() {

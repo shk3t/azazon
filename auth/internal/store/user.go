@@ -1,9 +1,9 @@
 package store
 
 import (
+	"auth/internal/model"
 	"auth/internal/query"
 	errpkg "common/pkg/errors"
-	"common/pkg/model"
 	"context"
 	"errors"
 
