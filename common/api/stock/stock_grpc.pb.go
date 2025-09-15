@@ -19,10 +19,10 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	StockService_SaveProduct_FullMethodName             = "/stock.StockService/SaveProduct"
-	StockService_IncreaseProductQuantity_FullMethodName = "/stock.StockService/IncreaseProductQuantity"
-	StockService_GetProductInfo_FullMethodName          = "/stock.StockService/GetProductInfo"
-	StockService_DeleteProduct_FullMethodName           = "/stock.StockService/DeleteProduct"
+	StockService_SaveProduct_FullMethodName           = "/stock.StockService/SaveProduct"
+	StockService_IncreaseStockQuantity_FullMethodName = "/stock.StockService/IncreaseStockQuantity"
+	StockService_GetStockInfo_FullMethodName          = "/stock.StockService/GetStockInfo"
+	StockService_DeleteProduct_FullMethodName         = "/stock.StockService/DeleteProduct"
 )
 
 // StockServiceClient is the client API for StockService service.
@@ -30,8 +30,8 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type StockServiceClient interface {
 	SaveProduct(ctx context.Context, in *SaveProductRequest, opts ...grpc.CallOption) (*SaveProductResponse, error)
-	IncreaseProductQuantity(ctx context.Context, in *IncreaseProductQuantityRequest, opts ...grpc.CallOption) (*IncreaseProductQuantityResponse, error)
-	GetProductInfo(ctx context.Context, in *GetProductInfoRequest, opts ...grpc.CallOption) (*GetProductInfoResponse, error)
+	IncreaseStockQuantity(ctx context.Context, in *IncreaseStockQuantityRequest, opts ...grpc.CallOption) (*IncreaseStockQuantityResponse, error)
+	GetStockInfo(ctx context.Context, in *GetStockInfoRequest, opts ...grpc.CallOption) (*GetStockInfoResponse, error)
 	DeleteProduct(ctx context.Context, in *DeleteProductRequest, opts ...grpc.CallOption) (*DeleteProductResponse, error)
 }
 
@@ -53,20 +53,20 @@ func (c *stockServiceClient) SaveProduct(ctx context.Context, in *SaveProductReq
 	return out, nil
 }
 
-func (c *stockServiceClient) IncreaseProductQuantity(ctx context.Context, in *IncreaseProductQuantityRequest, opts ...grpc.CallOption) (*IncreaseProductQuantityResponse, error) {
+func (c *stockServiceClient) IncreaseStockQuantity(ctx context.Context, in *IncreaseStockQuantityRequest, opts ...grpc.CallOption) (*IncreaseStockQuantityResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(IncreaseProductQuantityResponse)
-	err := c.cc.Invoke(ctx, StockService_IncreaseProductQuantity_FullMethodName, in, out, cOpts...)
+	out := new(IncreaseStockQuantityResponse)
+	err := c.cc.Invoke(ctx, StockService_IncreaseStockQuantity_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *stockServiceClient) GetProductInfo(ctx context.Context, in *GetProductInfoRequest, opts ...grpc.CallOption) (*GetProductInfoResponse, error) {
+func (c *stockServiceClient) GetStockInfo(ctx context.Context, in *GetStockInfoRequest, opts ...grpc.CallOption) (*GetStockInfoResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(GetProductInfoResponse)
-	err := c.cc.Invoke(ctx, StockService_GetProductInfo_FullMethodName, in, out, cOpts...)
+	out := new(GetStockInfoResponse)
+	err := c.cc.Invoke(ctx, StockService_GetStockInfo_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -88,8 +88,8 @@ func (c *stockServiceClient) DeleteProduct(ctx context.Context, in *DeleteProduc
 // for forward compatibility.
 type StockServiceServer interface {
 	SaveProduct(context.Context, *SaveProductRequest) (*SaveProductResponse, error)
-	IncreaseProductQuantity(context.Context, *IncreaseProductQuantityRequest) (*IncreaseProductQuantityResponse, error)
-	GetProductInfo(context.Context, *GetProductInfoRequest) (*GetProductInfoResponse, error)
+	IncreaseStockQuantity(context.Context, *IncreaseStockQuantityRequest) (*IncreaseStockQuantityResponse, error)
+	GetStockInfo(context.Context, *GetStockInfoRequest) (*GetStockInfoResponse, error)
 	DeleteProduct(context.Context, *DeleteProductRequest) (*DeleteProductResponse, error)
 	mustEmbedUnimplementedStockServiceServer()
 }
@@ -104,11 +104,11 @@ type UnimplementedStockServiceServer struct{}
 func (UnimplementedStockServiceServer) SaveProduct(context.Context, *SaveProductRequest) (*SaveProductResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SaveProduct not implemented")
 }
-func (UnimplementedStockServiceServer) IncreaseProductQuantity(context.Context, *IncreaseProductQuantityRequest) (*IncreaseProductQuantityResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method IncreaseProductQuantity not implemented")
+func (UnimplementedStockServiceServer) IncreaseStockQuantity(context.Context, *IncreaseStockQuantityRequest) (*IncreaseStockQuantityResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method IncreaseStockQuantity not implemented")
 }
-func (UnimplementedStockServiceServer) GetProductInfo(context.Context, *GetProductInfoRequest) (*GetProductInfoResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetProductInfo not implemented")
+func (UnimplementedStockServiceServer) GetStockInfo(context.Context, *GetStockInfoRequest) (*GetStockInfoResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetStockInfo not implemented")
 }
 func (UnimplementedStockServiceServer) DeleteProduct(context.Context, *DeleteProductRequest) (*DeleteProductResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteProduct not implemented")
@@ -152,38 +152,38 @@ func _StockService_SaveProduct_Handler(srv interface{}, ctx context.Context, dec
 	return interceptor(ctx, in, info, handler)
 }
 
-func _StockService_IncreaseProductQuantity_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(IncreaseProductQuantityRequest)
+func _StockService_IncreaseStockQuantity_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(IncreaseStockQuantityRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(StockServiceServer).IncreaseProductQuantity(ctx, in)
+		return srv.(StockServiceServer).IncreaseStockQuantity(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: StockService_IncreaseProductQuantity_FullMethodName,
+		FullMethod: StockService_IncreaseStockQuantity_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(StockServiceServer).IncreaseProductQuantity(ctx, req.(*IncreaseProductQuantityRequest))
+		return srv.(StockServiceServer).IncreaseStockQuantity(ctx, req.(*IncreaseStockQuantityRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _StockService_GetProductInfo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetProductInfoRequest)
+func _StockService_GetStockInfo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetStockInfoRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(StockServiceServer).GetProductInfo(ctx, in)
+		return srv.(StockServiceServer).GetStockInfo(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: StockService_GetProductInfo_FullMethodName,
+		FullMethod: StockService_GetStockInfo_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(StockServiceServer).GetProductInfo(ctx, req.(*GetProductInfoRequest))
+		return srv.(StockServiceServer).GetStockInfo(ctx, req.(*GetStockInfoRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -218,12 +218,12 @@ var StockService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _StockService_SaveProduct_Handler,
 		},
 		{
-			MethodName: "IncreaseProductQuantity",
-			Handler:    _StockService_IncreaseProductQuantity_Handler,
+			MethodName: "IncreaseStockQuantity",
+			Handler:    _StockService_IncreaseStockQuantity_Handler,
 		},
 		{
-			MethodName: "GetProductInfo",
-			Handler:    _StockService_GetProductInfo_Handler,
+			MethodName: "GetStockInfo",
+			Handler:    _StockService_GetStockInfo_Handler,
 		},
 		{
 			MethodName: "DeleteProduct",

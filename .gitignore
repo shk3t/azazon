@@ -10,7 +10,6 @@ todo.md
 env.*
 
 # Python
-migrations/
 __pycache__/
 .venv/
 .pytest_cache/

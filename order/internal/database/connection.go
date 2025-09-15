@@ -1,9 +1,9 @@
 package database
 
 import (
-	"order/internal/config"
 	"context"
 	"fmt"
+	"order/internal/config"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )

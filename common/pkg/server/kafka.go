@@ -1,6 +1,7 @@
 package server
 
 import (
+	"common/pkg/consts"
 	"context"
 	"errors"
 	"log"
@@ -12,8 +13,8 @@ import (
 type KafkaMessageHandlerFunc func(ctx context.Context, msg kafka.Message) error
 
 type KafkaConnector struct {
-	Readers   map[string]*kafka.Reader
-	Writers   map[string]*kafka.Writer
+	Readers   map[consts.TopicName]*kafka.Reader
+	Writers   map[consts.TopicName]*kafka.Writer
 	ctx       context.Context
 	cancelCtx context.CancelFunc
 	logger    *log.Logger
@@ -22,38 +23,41 @@ type KafkaConnector struct {
 func NewKafkaConnector(logger *log.Logger) *KafkaConnector {
 	ctx, cancel := context.WithCancel(context.Background())
 	return &KafkaConnector{
-		Readers:   map[string]*kafka.Reader{},
-		Writers:   map[string]*kafka.Writer{},
+		Readers:   map[consts.TopicName]*kafka.Reader{},
+		Writers:   map[consts.TopicName]*kafka.Writer{},
 		ctx:       ctx,
 		cancelCtx: cancel,
 		logger:    logger,
 	}
 }
 
-func (c *KafkaConnector) Connect(
-	readerTopics *[]string,
+func (c *KafkaConnector) ConnectAll(
+	readerTopics *[]consts.TopicName,
 	readerConfig *kafka.ReaderConfig,
-	writeTopics *[]string,
+	writeTopics *[]consts.TopicName,
 	writerConfig *kafka.WriterConfig,
 ) {
 	if readerTopics != nil && readerConfig != nil {
 		for _, topic := range *readerTopics {
-			readerConfig.Topic = topic
+			readerConfig.Topic = string(topic)
+			c.logger.Println(readerConfig.Topic)
 			c.Readers[topic] = kafka.NewReader(*readerConfig)
 		}
 	}
 
 	if writeTopics != nil && writerConfig != nil {
 		for _, topic := range *writeTopics {
-			writerConfig.Topic = topic
+			writerConfig.Topic = string(topic)
 			c.Writers[topic] = kafka.NewWriter(*writerConfig)
 		}
 	}
 }
 
-func (c *KafkaConnector) AttachReaderHandler(topic string, handlerFunc KafkaMessageHandlerFunc) {
+func (c *KafkaConnector) AttachReaderHandler(
+	topic consts.TopicName,
+	handlerFunc KafkaMessageHandlerFunc,
+) {
 	reader := c.Readers[topic]
-	c.logger.Println(topic, "INITEDDD")  // TODO
 
 	go func() {
 		for {
@@ -65,7 +69,6 @@ func (c *KafkaConnector) AttachReaderHandler(topic string, handlerFunc KafkaMess
 				}
 				continue
 			}
-			c.logger.Println("Я ПРОШЕЛ ДАЛЬШЕ!") // TODO
 
 			if err = handlerFunc(c.ctx, msg); err != nil {
 				c.logger.Println(err)
@@ -78,7 +81,7 @@ func (c *KafkaConnector) AttachReaderHandler(topic string, handlerFunc KafkaMess
 	}()
 }
 
-func (c *KafkaConnector) Disconnect() {
+func (c *KafkaConnector) DisconnectAll() {
 	c.cancelCtx()
 
 	var wg sync.WaitGroup

@@ -1,9 +1,11 @@
 package consts
 
+type TopicName string
+
 var Topics = struct {
-	OrderCreated   string
-	OrderConfirmed string
-	OrderCanceled  string
+	OrderCreated   TopicName
+	OrderConfirmed TopicName
+	OrderCanceled  TopicName
 }{
 	OrderCreated:   "order_created",
 	OrderConfirmed: "order_confirmed",

@@ -6,6 +6,7 @@ import (
 	"auth/internal/model"
 	"auth/internal/setup"
 	"common/api/auth"
+	"common/pkg/consts"
 	errpkg "common/pkg/errors"
 	"common/pkg/log"
 	commServer "common/pkg/server"
@@ -23,7 +24,7 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-var connector = commServer.NewTestConnector()
+var connector *commServer.TestConnector
 
 func TestMain(m *testing.M) {
 	workDir := filepath.Dir(sugar.Default(os.Getwd()))
@@ -38,7 +39,7 @@ func TestMain(m *testing.M) {
 	logger := log.Loggers.Test
 	grpcUrl := fmt.Sprintf("localhost:%d", config.Env.TestPort)
 
-	cmd, err := commSetup.ServerUp(workDir, grpcUrl, logger)
+	cmd, err := commSetup.ServerUp( config.AppName, workDir, grpcUrl, logger)
 	if err != nil {
 		commSetup.ServerDown(cmd, logger)
 		logger.Println(err)
@@ -46,22 +47,26 @@ func TestMain(m *testing.M) {
 		os.Exit(1)
 	}
 
-	connector.Connect(grpcUrl, logger, nil, nil, nil, nil)
+	connector = commServer.NewTestConnector(logger)
+	connector.ConnectAll(
+		map[consts.ServiceName]string{consts.Services.Auth: grpcUrl},
+		nil, nil, nil, nil,
+	)
 
 	logger.Println("Running tests...")
 	exitCode := m.Run()
 	logger.Println("Test run finished")
 
 	commSetup.ServerDown(cmd, logger)
-	connector.Disconnect()
+	connector.DisconnectAll()
 	setup.DeinitAll()
 	os.Exit(exitCode)
 }
 
 func TestRegister(t *testing.T) {
 	require := require.New(t)
-	client, closeConn, _ := connector.GetGrpcClient()
-	defer closeConn()
+	client, err := connector.GetAuthClient()
+	require.NoError(err)
 
 	for _, testCase := range registerTestCases {
 		ctx := context.Background()
@@ -84,8 +89,8 @@ func TestRegister(t *testing.T) {
 
 func TestLogin(t *testing.T) {
 	require := require.New(t)
-	client, closeConn, _ := connector.GetGrpcClient()
-	defer closeConn()
+	client, err := connector.GetAuthClient()
+	require.NoError(err)
 
 	for _, testCase := range loginTestCases {
 		ctx := context.Background()
@@ -103,8 +108,8 @@ func TestLogin(t *testing.T) {
 
 func TestValidateToken(t *testing.T) {
 	require := require.New(t)
-	client, closeConn, _ := connector.GetGrpcClient()
-	defer closeConn()
+	client, err := connector.GetAuthClient()
+	require.NoError(err)
 
 	for _, testCase := range validateTokenTestCases {
 		ctx := context.Background()
@@ -125,8 +130,8 @@ func TestValidateToken(t *testing.T) {
 
 func TestUpdateUser(t *testing.T) {
 	require := require.New(t)
-	client, closeConn, _ := connector.GetGrpcClient()
-	defer closeConn()
+	client, err := connector.GetAuthClient()
+	require.NoError(err)
 
 	for _, testCase := range updateUserTestCases {
 		ctx := context.Background()

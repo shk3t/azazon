@@ -23,7 +23,7 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-var connector = commServer.NewTestConnector()
+var connector *commServer.TestConnector
 
 func TestMain(m *testing.M) {
 	workDir := filepath.Dir(sugar.Default(os.Getwd()))
@@ -38,7 +38,7 @@ func TestMain(m *testing.M) {
 	logger := log.Loggers.Test
 	grpcUrl := fmt.Sprintf("localhost:%d", config.Env.TestPort)
 
-	cmd, err := commSetup.ServerUp(workDir, grpcUrl, logger)
+	cmd, err := commSetup.ServerUp(config.AppName, workDir, grpcUrl, logger)
 	if err != nil {
 		commSetup.ServerDown(cmd, logger)
 		logger.Println(err)
@@ -46,11 +46,11 @@ func TestMain(m *testing.M) {
 		os.Exit(1)
 	}
 
-	connector.Connect(
-		grpcUrl,
-		logger,
+	connector = commServer.NewTestConnector(logger)
+	connector.ConnectAll(
+		nil,
 		nil, nil,
-		&[]string{consts.Topics.OrderCreated},
+		&[]consts.TopicName{consts.Topics.OrderCreated},
 		&kafka.WriterConfig{Brokers: config.Env.KafkaBrokerHosts},
 	)
 
@@ -59,7 +59,7 @@ func TestMain(m *testing.M) {
 	logger.Println("Test run finished")
 
 	commSetup.ServerDown(cmd, logger)
-	connector.Disconnect()
+	connector.DisconnectAll()
 	setup.DeinitAll()
 	os.Exit(exitCode)
 }

@@ -41,7 +41,7 @@ func NewNotificationServer(opts grpc.ServerOption) *NotificationServer {
 }
 
 func (s *NotificationServer) initKafka() {
-	readerHandlers := map[string]commServer.KafkaMessageHandlerFunc{
+	readerHandlers := map[consts.TopicName]commServer.KafkaMessageHandlerFunc{
 		consts.Topics.OrderCreated:   s.HandleOrderCreated,
 		consts.Topics.OrderConfirmed: s.HandleOrderConfirmed,
 		consts.Topics.OrderCanceled:  s.HandleOrderCanceled,
@@ -54,14 +54,15 @@ func (s *NotificationServer) initKafka() {
 		RebalanceTimeout: 2 * time.Second,
 	}
 
-	s.kafkaConnector.Connect(&readerTopics, &readerConfig, nil, nil)
+	s.kafkaConnector.ConnectAll(&readerTopics, &readerConfig, nil, nil)
 	for topic, handler := range readerHandlers {
 		s.kafkaConnector.AttachReaderHandler(topic, handler)
+		log.Debug("ATTACHED")
 	}
 }
 
 func (s *NotificationServer) HandleOrderCreated(ctx context.Context, msg kafka.Message) error {
-	log.Loggers.Event.Println("ЗАХЕНДЛИЛ!")
+	log.Debug("CALLED")
 	var in common.OrderEvent
 	if err := proto.Unmarshal(msg.Value, &in); err != nil {
 		return err
@@ -70,7 +71,7 @@ func (s *NotificationServer) HandleOrderCreated(ctx context.Context, msg kafka.M
 }
 
 func (s *NotificationServer) HandleOrderConfirmed(ctx context.Context, msg kafka.Message) error {
-	log.Loggers.Event.Println("ЗАХЕНДЛИЛ!")
+	log.Debug("CALLED")
 	var in common.OrderEvent
 	if err := proto.Unmarshal(msg.Value, &in); err != nil {
 		return err
@@ -79,7 +80,7 @@ func (s *NotificationServer) HandleOrderConfirmed(ctx context.Context, msg kafka
 }
 
 func (s *NotificationServer) HandleOrderCanceled(ctx context.Context, msg kafka.Message) error {
-	log.Loggers.Event.Println("ЗАХЕНДЛИЛ!")
+	log.Debug("CALLED")
 	var in common.OrderEvent
 	if err := proto.Unmarshal(msg.Value, &in); err != nil {
 		return err
@@ -91,7 +92,7 @@ var allServers []*NotificationServer
 
 func Deinit() {
 	for _, s := range allServers {
-		s.kafkaConnector.Disconnect()
+		s.kafkaConnector.DisconnectAll()
 		s.GrpcServer.GracefulStop()
 	}
 }

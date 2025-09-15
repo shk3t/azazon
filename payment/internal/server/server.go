@@ -41,7 +41,7 @@ func NewPaymentServer(opts grpc.ServerOption) *PaymentServer {
 }
 
 func (s *PaymentServer) initKafka() {
-	readerHandlers := map[string]commServer.KafkaMessageHandlerFunc{
+	readerHandlers := map[consts.TopicName]commServer.KafkaMessageHandlerFunc{
 		consts.Topics.OrderCreated: s.StartPayment,
 	}
 	readerTopics := helper.MapKeys(readerHandlers)
@@ -55,19 +55,18 @@ func (s *PaymentServer) initKafka() {
 	writerConfig := kafka.WriterConfig{
 		Brokers: config.Env.KafkaBrokerHosts,
 	}
-	writerTopics := []string{
+	writerTopics := []consts.TopicName{
 		consts.Topics.OrderConfirmed,
 		consts.Topics.OrderCanceled,
 	}
 
-	s.kafkaConnector.Connect(&readerTopics, &readerConfig, &writerTopics, &writerConfig)
+	s.kafkaConnector.ConnectAll(&readerTopics, &readerConfig, &writerTopics, &writerConfig)
 	for topic, handler := range readerHandlers {
 		s.kafkaConnector.AttachReaderHandler(topic, handler)
 	}
 }
 
 func (s *PaymentServer) StartPayment(ctx context.Context, msg kafka.Message) error {
-	log.Debug("СКОЛЬКО МОЖНО УЖЕ")
 	var in common.OrderEvent
 	if err := proto.Unmarshal(msg.Value, &in); err != nil {
 		return err
@@ -91,7 +90,7 @@ var allServers []*PaymentServer
 
 func Deinit() {
 	for _, s := range allServers {
-		s.kafkaConnector.Disconnect()
+		s.kafkaConnector.DisconnectAll()
 		s.GrpcServer.GracefulStop()
 	}
 }

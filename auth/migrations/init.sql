@@ -1,0 +1,6 @@
+CREATE TABLE "user" (
+    id SERIAL PRIMARY KEY,
+    login VARCHAR(64) NOT NULL UNIQUE,
+    password_hash VARCHAR(128) NOT NULL,
+    role VARCHAR(32) NOT NULL
+);

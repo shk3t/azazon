@@ -1,6 +1,10 @@
 package service
 
-import "common/pkg/grpcutil"
+import (
+	"common/pkg/grpcutil"
+	"context"
+	"order/internal/model"
+)
 
 var NewErr = grpcutil.NewError
 var NewInternalErr = grpcutil.NewInternalError
@@ -16,4 +20,18 @@ func NewOrderService() *OrderService {
 	return &OrderService{
 		store: nil,
 	}
+}
+
+func (s *OrderService) CreateOrder(
+	ctx context.Context,
+	body model.Order,
+) (orderId int, err *grpcutil.HandlerError) {
+	return 0, nil
+}
+
+func (s *OrderService) GetOrderInfo(
+	ctx context.Context,
+	orderId int,
+) (*model.Order, *grpcutil.HandlerError) {
+	return nil, nil
 }
