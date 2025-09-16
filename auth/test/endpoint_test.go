@@ -7,13 +7,13 @@ import (
 	"auth/internal/setup"
 	"common/api/auth"
 	"common/pkg/consts"
-	errpkg "common/pkg/errors"
 	"common/pkg/log"
-	commServer "common/pkg/server"
+	serverpkg "common/pkg/server"
 	"common/pkg/service"
-	commSetup "common/pkg/setup"
+	setuppkg "common/pkg/setup"
 	"common/pkg/sugar"
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -24,7 +24,7 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-var connector *commServer.TestConnector
+var connector *serverpkg.TestConnector
 
 func TestMain(m *testing.M) {
 	workDir := filepath.Dir(sugar.Default(os.Getwd()))
@@ -39,15 +39,15 @@ func TestMain(m *testing.M) {
 	logger := log.Loggers.Test
 	grpcUrl := fmt.Sprintf("localhost:%d", config.Env.TestPort)
 
-	cmd, err := commSetup.ServerUp( config.AppName, workDir, grpcUrl, logger)
+	cmd, err := setuppkg.ServerUp(config.AppName, workDir, grpcUrl, logger)
 	if err != nil {
-		commSetup.ServerDown(cmd, logger)
+		setuppkg.ServerDown(cmd, logger)
 		logger.Println(err)
 		setup.DeinitAll()
 		os.Exit(1)
 	}
 
-	connector = commServer.NewTestConnector(logger)
+	connector = serverpkg.NewTestConnector(logger)
 	connector.ConnectAll(
 		map[consts.ServiceName]string{consts.Services.Auth: grpcUrl},
 		nil, nil, nil, nil,
@@ -57,7 +57,7 @@ func TestMain(m *testing.M) {
 	exitCode := m.Run()
 	logger.Println("Test run finished")
 
-	commSetup.ServerDown(cmd, logger)
+	setuppkg.ServerDown(cmd, logger)
 	connector.DisconnectAll()
 	setup.DeinitAll()
 	os.Exit(exitCode)
@@ -122,7 +122,7 @@ func TestValidateToken(t *testing.T) {
 		})
 		st, ok := status.FromError(err)
 		require.True(ok, err)
-		require.True(resp.Valid, errpkg.InvalidToken)
+		require.True(resp.Valid, errors.New("Invalid token"))
 
 		require.Equal(testCase.statusCode, st.Code())
 	}

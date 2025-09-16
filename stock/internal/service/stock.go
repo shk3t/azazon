@@ -2,7 +2,7 @@ package service
 
 import "common/pkg/grpcutil"
 
-var NewErr = grpcutil.NewError
+var NewErr = grpcutil.NewServiceError
 var NewInternalErr = grpcutil.NewInternalError
 
 type stockStore interface {

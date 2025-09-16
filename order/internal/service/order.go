@@ -6,7 +6,7 @@ import (
 	"order/internal/model"
 )
 
-var NewErr = grpcutil.NewError
+var NewErr = grpcutil.NewServiceError
 var NewInternalErr = grpcutil.NewInternalError
 
 type orderStore interface {
@@ -25,13 +25,13 @@ func NewOrderService() *OrderService {
 func (s *OrderService) CreateOrder(
 	ctx context.Context,
 	body model.Order,
-) (orderId int, err *grpcutil.HandlerError) {
+) (orderId int, err *grpcutil.ServiceError) {
 	return 0, nil
 }
 
 func (s *OrderService) GetOrderInfo(
 	ctx context.Context,
 	orderId int,
-) (*model.Order, *grpcutil.HandlerError) {
+) (*model.Order, *grpcutil.ServiceError) {
 	return nil, nil
 }

@@ -4,11 +4,11 @@ import (
 	"common/pkg/grpcutil"
 	"context"
 	"errors"
-	"payment/internal/model"
+	"common/pkg/model"
 	"time"
 )
 
-var NewErr = grpcutil.NewError
+var NewErr = grpcutil.NewServiceError
 var NewInternalErr = grpcutil.NewInternalError
 
 type PaymentService struct{}

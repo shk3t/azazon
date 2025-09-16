@@ -2,12 +2,12 @@ package service
 
 import (
 	"common/pkg/grpcutil"
+	"common/pkg/model"
 	"context"
 	"fmt"
-	"notification/internal/model"
 )
 
-var NewErr = grpcutil.NewError
+var NewErr = grpcutil.NewServiceError
 var NewInternalErr = grpcutil.NewInternalError
 
 type NotificationService struct{}

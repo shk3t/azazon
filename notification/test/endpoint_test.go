@@ -2,28 +2,27 @@ package notificationtest
 
 import (
 	"common/pkg/consts"
+	conv "common/pkg/conversion"
 	"common/pkg/log"
-	commServer "common/pkg/server"
-	commSetup "common/pkg/setup"
+	serverpkg "common/pkg/server"
+	setuppkg "common/pkg/setup"
 	"common/pkg/sugar"
 	"context"
 	"fmt"
 	"notification/internal/config"
-	conv "notification/internal/conversion"
 	"notification/internal/service"
 	"notification/internal/setup"
 	"os"
 	"path/filepath"
-	"strconv"
 	"testing"
 	"time"
 
 	"github.com/segmentio/kafka-go"
 	"github.com/stretchr/testify/require"
-	"google.golang.org/protobuf/proto"
 )
 
-var connector *commServer.TestConnector
+var connector *serverpkg.TestConnector
+var marshaler conv.KafkaMarshaler
 
 func TestMain(m *testing.M) {
 	workDir := filepath.Dir(sugar.Default(os.Getwd()))
@@ -38,15 +37,15 @@ func TestMain(m *testing.M) {
 	logger := log.Loggers.Test
 	grpcUrl := fmt.Sprintf("localhost:%d", config.Env.TestPort)
 
-	cmd, err := commSetup.ServerUp(config.AppName, workDir, grpcUrl, logger)
+	cmd, err := setuppkg.ServerUp(config.AppName, workDir, grpcUrl, logger)
 	if err != nil {
-		commSetup.ServerDown(cmd, logger)
+		setuppkg.ServerDown(cmd, logger)
 		logger.Println(err)
 		setup.DeinitAll()
 		os.Exit(1)
 	}
 
-	connector = commServer.NewTestConnector(logger)
+	connector = serverpkg.NewTestConnector(logger)
 	connector.ConnectAll(
 		nil,
 		nil, nil,
@@ -54,11 +53,13 @@ func TestMain(m *testing.M) {
 		&kafka.WriterConfig{Brokers: config.Env.KafkaBrokerHosts},
 	)
 
+	marshaler = conv.NewKafkaMarshaler(config.Env.KafkaSerialization)
+
 	logger.Println("Running tests...")
 	exitCode := m.Run()
 	logger.Println("Test run finished")
 
-	commSetup.ServerDown(cmd, logger)
+	setuppkg.ServerDown(cmd, logger)
 	connector.DisconnectAll()
 	setup.DeinitAll()
 	os.Exit(exitCode)
@@ -71,15 +72,8 @@ func TestOrderCreated(t *testing.T) {
 	for i, testCase := range orderCreatedTestCases {
 		ctx := context.Background()
 
-		payload, err := proto.Marshal(conv.OrderEventProto(&testCase.order))
-		require.NoError(err)
-
-		err = createdWriter.WriteMessages(ctx,
-			kafka.Message{
-				Key:   []byte(strconv.Itoa(testCase.order.OrderId)),
-				Value: payload,
-			},
-		)
+		kMsg := marshaler.MarshalOrderEvent(&testCase.event)
+		err := createdWriter.WriteMessages(ctx, kMsg)
 		require.NoError(err)
 
 		if i == 0 {
@@ -89,13 +83,13 @@ func TestOrderCreated(t *testing.T) {
 		}
 
 		messages, err := service.ReadEmails(
-			service.FmtUserById(testCase.order.UserId),
+			service.FmtUserById(testCase.event.UserId),
 		)
 		require.NoError(err)
 		require.True(len(messages) > 0, "No new messages recieved")
-		msg := messages[len(messages)-1]
-		require.Contains(msg, service.FmtUserById(testCase.order.UserId))
-		require.Contains(msg, fmt.Sprintf("Order %d", testCase.order.OrderId))
-		require.Contains(msg, "created")
+		eMsg := messages[len(messages)-1]
+		require.Contains(eMsg, service.FmtUserById(testCase.event.UserId))
+		require.Contains(eMsg, fmt.Sprintf("Order %d", testCase.event.OrderId))
+		require.Contains(eMsg, "created")
 	}
 }

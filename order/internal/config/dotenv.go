@@ -31,7 +31,12 @@ func LoadEnv(workDir string) error {
 			Name:        getAppEnv("DB_NAME"),
 			SchemaReset: sugar.Default(strconv.ParseBool(getAppEnv("DB_SCHEMA_RESET"))),
 		},
-		KafkaBrokerHosts: []string{"localhost:" + os.Getenv("KAFKA_PORT")},
+		GrpcUrls: grpcClientUrls{
+			Auth:  "localhost:" + os.Getenv("AUTH_PORT"),
+			Stock: "localhost:" + os.Getenv("STOCK_PORT"),
+		},
+		KafkaBrokerHosts:   []string{"localhost:" + os.Getenv("KAFKA_PORT")},
+		KafkaSerialization: os.Getenv("KAFKA_SERIALIZATION"),
 	}
 
 	if Env.Test {
@@ -44,11 +49,13 @@ func LoadEnv(workDir string) error {
 const AppName = "ORDER"
 
 type envFields struct {
-	Port             int
-	TestPort         int
-	Test             bool
-	Db               dbConfig
-	KafkaBrokerHosts []string
+	Port               int
+	TestPort           int
+	Test               bool
+	Db                 dbConfig
+	GrpcUrls           grpcClientUrls
+	KafkaBrokerHosts   []string
+	KafkaSerialization string
 }
 
 type dbConfig struct {
@@ -58,6 +65,11 @@ type dbConfig struct {
 	Port        int
 	Name        string
 	SchemaReset bool
+}
+
+type grpcClientUrls struct {
+	Auth  string
+	Stock string
 }
 
 func getAppEnv(varName string) string {

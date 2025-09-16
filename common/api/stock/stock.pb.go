@@ -307,8 +307,7 @@ func (x *IncreaseStockQuantityResponse) GetStock() *Stock {
 
 type GetStockInfoRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Token         string                 `protobuf:"bytes,1,opt,name=token,proto3" json:"token,omitempty"`
-	ProductId     int64                  `protobuf:"varint,2,opt,name=product_id,json=productId,proto3" json:"product_id,omitempty"`
+	ProductId     int64                  `protobuf:"varint,1,opt,name=product_id,json=productId,proto3" json:"product_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -341,13 +340,6 @@ func (x *GetStockInfoRequest) ProtoReflect() protoreflect.Message {
 // Deprecated: Use GetStockInfoRequest.ProtoReflect.Descriptor instead.
 func (*GetStockInfoRequest) Descriptor() ([]byte, []int) {
 	return file_stock_proto_rawDescGZIP(), []int{5}
-}
-
-func (x *GetStockInfoRequest) GetToken() string {
-	if x != nil {
-		return x.Token
-	}
-	return ""
 }
 
 func (x *GetStockInfoRequest) GetProductId() int64 {
@@ -515,11 +507,10 @@ const file_stock_proto_rawDesc = "" +
 	"product_id\x18\x02 \x01(\x03R\tproductId\x12%\n" +
 	"\x0equantity_delta\x18\x03 \x01(\x03R\rquantityDelta\"C\n" +
 	"\x1dIncreaseStockQuantityResponse\x12\"\n" +
-	"\x05stock\x18\x01 \x01(\v2\f.stock.StockR\x05stock\"J\n" +
-	"\x13GetStockInfoRequest\x12\x14\n" +
-	"\x05token\x18\x01 \x01(\tR\x05token\x12\x1d\n" +
+	"\x05stock\x18\x01 \x01(\v2\f.stock.StockR\x05stock\"4\n" +
+	"\x13GetStockInfoRequest\x12\x1d\n" +
 	"\n" +
-	"product_id\x18\x02 \x01(\x03R\tproductId\":\n" +
+	"product_id\x18\x01 \x01(\x03R\tproductId\":\n" +
 	"\x14GetStockInfoResponse\x12\"\n" +
 	"\x05stock\x18\x01 \x01(\v2\f.stock.StockR\x05stock\"K\n" +
 	"\x14DeleteProductRequest\x12\x14\n" +

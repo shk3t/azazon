@@ -1,34 +1,34 @@
 package server
 
 import (
-	"common/api/common"
 	"common/api/payment"
 	"common/pkg/consts"
+	convpkg "common/pkg/conversion"
 	"common/pkg/helper"
 	"common/pkg/log"
-	commServer "common/pkg/server"
+	serverpkg "common/pkg/server"
 	"context"
 	"payment/internal/config"
-	conv "payment/internal/conversion"
 	"payment/internal/service"
 	"time"
 
 	"github.com/segmentio/kafka-go"
 	"google.golang.org/grpc"
-	"google.golang.org/protobuf/proto"
 )
 
 type PaymentServer struct {
 	payment.UnimplementedPaymentServiceServer
 	GrpcServer     *grpc.Server
 	service        *service.PaymentService
-	kafkaConnector *commServer.KafkaConnector
+	marshaler      convpkg.KafkaMarshaler
+	kafkaConnector *serverpkg.KafkaConnector
 }
 
 func NewPaymentServer(opts grpc.ServerOption) *PaymentServer {
 	s := &PaymentServer{
 		service:        service.NewPaymentService(),
-		kafkaConnector: commServer.NewKafkaConnector(log.Loggers.Event),
+		marshaler:      convpkg.NewKafkaMarshaler(config.Env.KafkaSerialization),
+		kafkaConnector: serverpkg.NewKafkaConnector(log.Loggers.Event),
 	}
 
 	s.initKafka()
@@ -41,7 +41,7 @@ func NewPaymentServer(opts grpc.ServerOption) *PaymentServer {
 }
 
 func (s *PaymentServer) initKafka() {
-	readerHandlers := map[consts.TopicName]commServer.KafkaMessageHandlerFunc{
+	readerHandlers := map[consts.TopicName]serverpkg.KafkaMessageHandlerFunc{
 		consts.Topics.OrderCreated: s.StartPayment,
 	}
 	readerTopics := helper.MapKeys(readerHandlers)
@@ -67,21 +67,19 @@ func (s *PaymentServer) initKafka() {
 }
 
 func (s *PaymentServer) StartPayment(ctx context.Context, msg kafka.Message) error {
-	var in common.OrderEvent
-	if err := proto.Unmarshal(msg.Value, &in); err != nil {
+	event, err := s.marshaler.UnmarshalOrderEvent(msg)
+	if err != nil {
 		return err
 	}
 
-	err := s.service.StartPayment(ctx, *conv.OrderEventModel(&in))
+	err = s.service.StartPayment(ctx, *event)
 
 	newMsg := kafka.Message{Key: msg.Key, Value: msg.Value}
-	log.Debug(msg)
 	if err == nil {
 		err = s.kafkaConnector.Writers[consts.Topics.OrderConfirmed].WriteMessages(ctx, newMsg)
 	} else {
 		err = s.kafkaConnector.Writers[consts.Topics.OrderCanceled].WriteMessages(ctx, newMsg)
 	}
-	log.Debug(err)
 
 	return err
 }

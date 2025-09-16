@@ -6,14 +6,14 @@ import (
 	"auth/internal/store"
 	errpkg "common/pkg/errors"
 	"common/pkg/grpcutil"
-	commService "common/pkg/service"
+	servicepkg "common/pkg/service"
 	"common/pkg/sugar"
 	"context"
 	"errors"
 	"net/http"
 )
 
-var NewErr = grpcutil.NewError
+var NewErr = grpcutil.NewServiceError
 var NewInternalErr = grpcutil.NewInternalError
 
 type userStore interface {
@@ -36,7 +36,7 @@ func NewAuthService() *AuthService {
 func (s *AuthService) Register(
 	ctx context.Context,
 	body model.User,
-) (*model.AuthResponse, *grpcutil.HandlerError) {
+) (*model.AuthResponse, *grpcutil.ServiceError) {
 	if body.Login == "" || body.Password == "" {
 		return nil, NewErr(http.StatusBadRequest, "Login and password must be provided")
 	}
@@ -69,7 +69,7 @@ func (s *AuthService) Register(
 func (s *AuthService) Login(
 	ctx context.Context,
 	body model.User,
-) (*model.AuthResponse, *grpcutil.HandlerError) {
+) (*model.AuthResponse, *grpcutil.ServiceError) {
 	if body.Login == "" || body.Password == "" {
 		return nil, NewErr(http.StatusBadRequest, "Login and password must be provided")
 	}
@@ -95,7 +95,7 @@ func (s *AuthService) Login(
 func (s *AuthService) ValidateToken(
 	ctx context.Context,
 	token string,
-) *grpcutil.HandlerError {
+) *grpcutil.ServiceError {
 	err := validateJwtToken(token)
 	if err != nil {
 		return NewErr(http.StatusUnauthorized, "Invalid Token")
@@ -108,13 +108,13 @@ func (s *AuthService) UpdateUser(
 	token string,
 	body model.User,
 	roleKey string,
-) (*model.AuthResponse, *grpcutil.HandlerError) {
+) (*model.AuthResponse, *grpcutil.ServiceError) {
 	err := validateJwtToken(token)
 	if err != nil {
 		return nil, NewErr(http.StatusUnauthorized, "Invalid Token")
 	}
 
-	claims, err := commService.ParseJwtToken(token)
+	claims, err := servicepkg.ParseJwtToken(token)
 	if err != nil {
 		return nil, NewInternalErr(err)
 	}

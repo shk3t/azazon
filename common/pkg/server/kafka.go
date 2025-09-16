@@ -40,7 +40,6 @@ func (c *KafkaConnector) ConnectAll(
 	if readerTopics != nil && readerConfig != nil {
 		for _, topic := range *readerTopics {
 			readerConfig.Topic = string(topic)
-			c.logger.Println(readerConfig.Topic)
 			c.Readers[topic] = kafka.NewReader(*readerConfig)
 		}
 	}

@@ -1,34 +1,34 @@
 package server
 
 import (
-	"common/api/common"
 	"common/api/notification"
 	"common/pkg/consts"
+	convpkg "common/pkg/conversion"
 	"common/pkg/helper"
 	"common/pkg/log"
-	commServer "common/pkg/server"
+	serverpkg "common/pkg/server"
 	"context"
 	"notification/internal/config"
-	conv "notification/internal/conversion"
 	"notification/internal/service"
 	"time"
 
 	"github.com/segmentio/kafka-go"
 	"google.golang.org/grpc"
-	"google.golang.org/protobuf/proto"
 )
 
 type NotificationServer struct {
 	notification.UnimplementedNotificationServiceServer
 	GrpcServer     *grpc.Server
 	service        *service.NotificationService
-	kafkaConnector *commServer.KafkaConnector
+	marshaler      convpkg.KafkaMarshaler
+	kafkaConnector *serverpkg.KafkaConnector
 }
 
 func NewNotificationServer(opts grpc.ServerOption) *NotificationServer {
 	s := &NotificationServer{
 		service:        service.NewNotificationService(),
-		kafkaConnector: commServer.NewKafkaConnector(log.Loggers.Event),
+		marshaler:      convpkg.NewKafkaMarshaler(config.Env.KafkaSerialization),
+		kafkaConnector: serverpkg.NewKafkaConnector(log.Loggers.Event),
 	}
 
 	s.initKafka()
@@ -41,7 +41,7 @@ func NewNotificationServer(opts grpc.ServerOption) *NotificationServer {
 }
 
 func (s *NotificationServer) initKafka() {
-	readerHandlers := map[consts.TopicName]commServer.KafkaMessageHandlerFunc{
+	readerHandlers := map[consts.TopicName]serverpkg.KafkaMessageHandlerFunc{
 		consts.Topics.OrderCreated:   s.HandleOrderCreated,
 		consts.Topics.OrderConfirmed: s.HandleOrderConfirmed,
 		consts.Topics.OrderCanceled:  s.HandleOrderCanceled,
@@ -50,42 +50,38 @@ func (s *NotificationServer) initKafka() {
 	readerConfig := kafka.ReaderConfig{
 		Brokers:          config.Env.KafkaBrokerHosts,
 		GroupID:          "notification_group",
-		StartOffset:      kafka.LastOffset,
+		StartOffset:      kafka.LastOffset, // comment in, comment out if kafka bugs in tests
 		RebalanceTimeout: 2 * time.Second,
 	}
 
 	s.kafkaConnector.ConnectAll(&readerTopics, &readerConfig, nil, nil)
 	for topic, handler := range readerHandlers {
 		s.kafkaConnector.AttachReaderHandler(topic, handler)
-		log.Debug("ATTACHED")
 	}
 }
 
 func (s *NotificationServer) HandleOrderCreated(ctx context.Context, msg kafka.Message) error {
-	log.Debug("CALLED")
-	var in common.OrderEvent
-	if err := proto.Unmarshal(msg.Value, &in); err != nil {
-		return err
+	event, err := s.marshaler.UnmarshalOrderEvent(msg)
+	if err != nil {
+		return nil
 	}
-	return s.service.HandleOrderCreated(ctx, *conv.OrderEventModel(&in))
+	return s.service.HandleOrderCreated(ctx, *event)
 }
 
 func (s *NotificationServer) HandleOrderConfirmed(ctx context.Context, msg kafka.Message) error {
-	log.Debug("CALLED")
-	var in common.OrderEvent
-	if err := proto.Unmarshal(msg.Value, &in); err != nil {
-		return err
+	event, err := s.marshaler.UnmarshalOrderEvent(msg)
+	if err != nil {
+		return nil
 	}
-	return s.service.HandleOrderCreated(ctx, *conv.OrderEventModel(&in))
+	return s.service.HandleOrderConfirmed(ctx, *event)
 }
 
 func (s *NotificationServer) HandleOrderCanceled(ctx context.Context, msg kafka.Message) error {
-	log.Debug("CALLED")
-	var in common.OrderEvent
-	if err := proto.Unmarshal(msg.Value, &in); err != nil {
-		return err
+	event, err := s.marshaler.UnmarshalOrderEvent(msg)
+	if err != nil {
+		return nil
 	}
-	return s.service.HandleOrderCreated(ctx, *conv.OrderEventModel(&in))
+	return s.service.HandleOrderCanceled(ctx, *event)
 }
 
 var allServers []*NotificationServer

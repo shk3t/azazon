@@ -2,7 +2,7 @@ package setup
 
 import (
 	"common/pkg/log"
-	commSetup "common/pkg/setup"
+	setuppkg "common/pkg/setup"
 	"payment/internal/config"
 	"payment/internal/server"
 )
@@ -23,4 +23,4 @@ func deinitAll() {
 	log.Deinit()
 }
 
-var InitAll, DeinitAll = commSetup.CreateInitFuncs(initAll, deinitAll)
+var InitAll, DeinitAll = setuppkg.CreateInitFuncs(initAll, deinitAll)
