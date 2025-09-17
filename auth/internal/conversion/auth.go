@@ -1,8 +1,8 @@
 package conversion
 
 import (
-	"common/api/auth"
 	"auth/internal/model"
+	"common/api/auth"
 )
 
 func User[R *auth.RegisterRequest | *auth.LoginRequest | *auth.UpdateUserRequest](r R) *model.User {
@@ -38,16 +38,4 @@ func LoginRequest(u *model.User) *auth.LoginRequest {
 		Login:    u.Login,
 		Password: u.Password,
 	}
-}
-
-func RegisterResponse(r *model.AuthResponse) *auth.RegisterResponse {
-	return &auth.RegisterResponse{Token: r.Token}
-}
-
-func LoginResponse(r *model.AuthResponse) *auth.LoginResponse {
-	return &auth.LoginResponse{Token: r.Token}
-}
-
-func UpdateUserResponse(r *model.AuthResponse) *auth.UpdateUserResponse {
-	return &auth.UpdateUserResponse{Token: r.Token}
 }

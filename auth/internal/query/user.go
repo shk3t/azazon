@@ -4,18 +4,20 @@ import (
 	db "auth/internal/database"
 	"auth/internal/model"
 	"context"
+
+	"github.com/jackc/pgx/v5"
 )
 
 func GetUserByLogin(ctx context.Context, login string) (model.User, error) {
-	user := model.User{}
-	err := db.ConnPool.QueryRow(
+	rows, _ := db.ConnPool.Query(
 		ctx, `
 		SELECT id, login, password_hash, role
 		FROM "user"
 		WHERE login = $1`,
 		login,
-	).Scan(&user.Id, &user.Login, &user.PasswordHash, &user.Role)
-	return user, err
+	)
+	defer rows.Close()
+	return pgx.CollectOneRow(rows, pgx.RowToStructByName[model.User])
 }
 
 func CreateUser(ctx context.Context, u model.User) (int, error) {
@@ -35,12 +37,17 @@ func UpdateUser(ctx context.Context, id int, u model.User) error {
 		ctx, `
 		UPDATE "user"
 		SET login = $1, password_hash = $2, role = $3
-		WHERE id = $3`,
-		u.Login, u.PasswordHash, u.Role, id,
+		WHERE id = $4`,
+		u.Login, u.PasswordHash, u.Role,
+		id,
 	)
 	return err
 }
 
 func DeleteUser(ctx context.Context, id int) {
-	db.ConnPool.Exec(ctx, "DELETE FROM user WHERE id = $1", id)
+	db.ConnPool.Exec(
+		ctx,
+		`DELETE FROM "user" WHERE id = $1`,
+		id,
+	)
 }

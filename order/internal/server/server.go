@@ -2,7 +2,7 @@ package server
 
 import (
 	"common/api/auth"
-	"common/api/order"
+	orderapi "common/api/order"
 	"common/api/stock"
 	"common/pkg/consts"
 	convpkg "common/pkg/conversion"
@@ -31,7 +31,7 @@ var NewErr = grpcutil.NewGrpcError
 var NewInternalErr = grpcutil.NewInternalGrpcError
 
 type OrderServer struct {
-	order.UnimplementedOrderServiceServer
+	orderapi.UnimplementedOrderServiceServer
 	GrpcServer     *grpc.Server
 	service        *service.OrderService
 	marshaler      convpkg.KafkaMarshaler
@@ -51,7 +51,7 @@ func NewOrderServer(opts grpc.ServerOption) *OrderServer {
 	s.initKafka()
 
 	s.GrpcServer = grpc.NewServer(opts)
-	order.RegisterOrderServiceServer(s.GrpcServer, s)
+	orderapi.RegisterOrderServiceServer(s.GrpcServer, s)
 
 	allServers = append(allServers, s)
 	return s
@@ -70,8 +70,8 @@ func (s *OrderServer) initKafka() {
 
 func (s *OrderServer) CreateOrder(
 	ctx context.Context,
-	in *order.CreateOrderRequest,
-) (*order.CreateOrderResponse, error) {
+	in *orderapi.CreateOrderRequest,
+) (*orderapi.CreateOrderResponse, error) {
 	authClient, _ := s.grpcConnector.GetAuthClient()
 	stockClient, _ := s.grpcConnector.GetStockClient()
 
@@ -128,7 +128,7 @@ func (s *OrderServer) CreateOrder(
 		return nil, err
 	}
 
-	order.Id, err = s.service.CreateOrder(ctx, order) // TODO
+	order.Id, err = s.service.CreateOrder(ctx, order)  // TODO non-nil error interface
 	if err != nil {
 		return nil, err.(*grpcutil.ServiceError).Grpc()
 	}
@@ -139,15 +139,18 @@ func (s *OrderServer) CreateOrder(
 	msg := s.marshaler.MarshalOrderEvent(orderEvent)
 	s.kafkaConnector.Writers[consts.Topics.OrderCreated].WriteMessages(ctx, msg)
 
-	return nil, nil
+	return &orderapi.CreateOrderResponse{OrderId: int64(order.Id)}, nil
 }
 
 func (s *OrderServer) GetOrderInfo(
 	ctx context.Context,
-	in *order.GetOrderInfoRequest,
-) (*order.GetOrderInfoResponse, error) {
-	// TODO: conversions
-	return nil, nil
+	in *orderapi.GetOrderInfoRequest,
+) (*orderapi.GetOrderInfoResponse, error) {
+	resp, err := s.service.GetOrderInfo(ctx, int(in.OrderId))
+	if err != nil {
+		return nil, err.Grpc()
+	}
+	return conv.GetOrderInfoResponse(resp), nil
 }
 
 var allServers []*OrderServer

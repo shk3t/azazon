@@ -36,7 +36,7 @@ func (s *AuthServer) Register(
 	if err != nil {
 		return nil, err.Grpc()
 	}
-	return conv.RegisterResponse(resp), nil
+	return &auth.RegisterResponse{Token: resp.Token}, nil
 }
 
 func (s *AuthServer) Login(
@@ -47,7 +47,7 @@ func (s *AuthServer) Login(
 	if err != nil {
 		return nil, err.Grpc()
 	}
-	return conv.LoginResponse(resp), nil
+	return &auth.LoginResponse{Token: resp.Token}, nil
 }
 
 func (s *AuthServer) ValidateToken(
@@ -74,7 +74,7 @@ func (s *AuthServer) UpdateUser(
 	if err != nil {
 		return nil, err.Grpc()
 	}
-	return conv.UpdateUserResponse(resp), nil
+	return &auth.UpdateUserResponse{Token: resp.Token}, nil
 }
 
 var allServers []*AuthServer
