@@ -128,9 +128,9 @@ func (s *OrderServer) CreateOrder(
 		return nil, err
 	}
 
-	order.Id, err = s.service.CreateOrder(ctx, order)  // TODO non-nil error interface
-	if err != nil {
-		return nil, err.(*grpcutil.ServiceError).Grpc()
+	order.Id, err = s.service.CreateOrder(ctx, order)
+	if v, ok := err.(*grpcutil.ServiceError); ok && v != nil {
+		return nil, v.Grpc()
 	}
 
 	orderEvent := conv.OrderEvent(&order)
