@@ -21,7 +21,7 @@ func (s *PaymentService) StartPayment(
 	ctx context.Context,
 	body model.OrderEvent,
 ) error {
-	balance := 10000
+	balance := 10000.00
 
 	time.Sleep(1 * time.Second)
 

@@ -11,18 +11,22 @@ service StockService {
     rpc DeleteProduct(DeleteProductRequest) returns (DeleteProductResponse);
 }
 
+message Product {
+    int64 id = 1;
+    string name = 2;
+    double price = 3;
+}
+
 message Stock {
-    int64 product_id = 1;
-    string product_name = 2;
-    int64 product_price = 3;
-    int64 quantity = 4;
+    Product product = 1;
+    int64 quantity = 2;
 }
 
 message SaveProductRequest {
     string token = 1;
     optional int64 product_id = 2;
     string product_name = 3;
-    int64 product_price = 4;
+    double product_price = 4;
 }
 
 message SaveProductResponse { Stock stock = 1; }
@@ -35,9 +39,7 @@ message IncreaseStockQuantityRequest {
 
 message IncreaseStockQuantityResponse { Stock stock = 1; }
 
-message GetStockInfoRequest {
-    int64 product_id = 1;
-}
+message GetStockInfoRequest { int64 product_id = 1; }
 
 message GetStockInfoResponse { Stock stock = 1; }
 

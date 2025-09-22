@@ -16,14 +16,12 @@ import (
 	"order/internal/config"
 	conv "order/internal/conversion"
 	"order/internal/model"
+	"order/internal/service"
 	"sync/atomic"
 
 	"github.com/google/uuid"
-	"golang.org/x/sync/errgroup"
-
-	"order/internal/service"
-
 	"github.com/segmentio/kafka-go"
+	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
 )
 
@@ -78,8 +76,7 @@ func (s *OrderServer) CreateOrder(
 	resp, err := authClient.ValidateToken(ctx, &auth.ValidateTokenRequest{Token: in.Token})
 	if err != nil {
 		return nil, err
-	}
-	if !resp.Valid {
+	} else if !resp.Valid {
 		return nil, NewErr(http.StatusUnauthorized, "Invalid Token")
 	}
 
@@ -92,19 +89,19 @@ func (s *OrderServer) CreateOrder(
 	}
 	for _, item := range in.Items {
 		order.Items = append(order.Items, model.Item{
-			Id:       int(item.Id),
-			Quantity: int(item.Quantity),
+			ProductId: int(item.ProductId),
+			Quantity:  int(item.Quantity),
 		})
 	}
 
-	fullPrice := atomic.Int64{}
+	fullPrice100 := atomic.Int64{}
 
 	eg, egCtx := errgroup.WithContext(ctx)
 	for _, item := range in.Items {
 		eg.Go(
 			func() error {
 				resp, err := stockClient.GetStockInfo(egCtx, &stock.GetStockInfoRequest{
-					ProductId: item.Id,
+					ProductId: item.ProductId,
 				})
 				if err != nil {
 					return err
@@ -113,11 +110,11 @@ func (s *OrderServer) CreateOrder(
 				if resp.Stock.Quantity < item.Quantity {
 					return NewErr(
 						http.StatusBadRequest,
-						fmt.Sprintf("Not enough item_%d quantity in stock", item.Id),
+						fmt.Sprintf("Not enough product_%d in stock", item.ProductId),
 					)
 				}
 
-				fullPrice.Add(resp.Stock.ProductPrice * item.Quantity)
+				fullPrice100.Add(int64(resp.Stock.ProductPrice) * item.Quantity * 100)
 
 				return nil
 			},
@@ -134,7 +131,7 @@ func (s *OrderServer) CreateOrder(
 	}
 
 	orderEvent := conv.OrderEvent(&order)
-	orderEvent.FullPrice = int(fullPrice.Load())
+	orderEvent.FullPrice = float64(fullPrice100.Load()) / 100
 
 	msg := s.marshaler.MarshalOrderEvent(orderEvent)
 	s.kafkaConnector.Writers[consts.Topics.OrderCreated].WriteMessages(ctx, msg)
@@ -146,11 +143,11 @@ func (s *OrderServer) GetOrderInfo(
 	ctx context.Context,
 	in *orderapi.GetOrderInfoRequest,
 ) (*orderapi.GetOrderInfoResponse, error) {
-	resp, err := s.service.GetOrderInfo(ctx, int(in.OrderId))
+	order, err := s.service.GetOrderInfo(ctx, int(in.OrderId))
 	if err != nil {
 		return nil, err.Grpc()
 	}
-	return conv.GetOrderInfoResponse(resp), nil
+	return conv.GetOrderInfoResponse(order), nil
 }
 
 var allServers []*OrderServer

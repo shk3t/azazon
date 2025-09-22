@@ -20,9 +20,9 @@ func LoadEnv(workDir string) error {
 	}
 
 	Env = envFields{
-		Port: sugar.Default(strconv.Atoi(getAppEnv("PORT"))),
+		Port:     sugar.Default(strconv.Atoi(getAppEnv("PORT"))),
 		TestPort: sugar.Default(strconv.Atoi(getAppEnv("TEST_PORT"))),
-		Test: sugar.Default(strconv.ParseBool(getAppEnv("TEST"))),
+		Test:     sugar.Default(strconv.ParseBool(getAppEnv("TEST"))),
 		Db: dbConfig{
 			User:        getAppEnv("DB_USER"),
 			Password:    getAppEnv("DB_PASSWORD"),
@@ -31,6 +31,11 @@ func LoadEnv(workDir string) error {
 			Name:        getAppEnv("DB_NAME"),
 			SchemaReset: sugar.Default(strconv.ParseBool(getAppEnv("DB_SCHEMA_RESET"))),
 		},
+		GrpcUrls: grpcClientUrls{
+			Auth:  "localhost:" + os.Getenv("AUTH_PORT"),
+		},
+		KafkaBrokerHosts:   []string{"localhost:" + os.Getenv("KAFKA_PORT")},
+		KafkaSerialization: os.Getenv("KAFKA_SERIALIZATION"),
 	}
 
 	if Env.Test {
@@ -43,10 +48,13 @@ func LoadEnv(workDir string) error {
 const AppName = "STOCK"
 
 type envFields struct {
-	Port     int
-	TestPort int
-	Test     bool
-	Db       dbConfig
+	Port               int
+	TestPort           int
+	Test               bool
+	Db                 dbConfig
+	GrpcUrls           grpcClientUrls
+	KafkaBrokerHosts   []string
+	KafkaSerialization string
 }
 
 type dbConfig struct {
@@ -56,6 +64,10 @@ type dbConfig struct {
 	Port        int
 	Name        string
 	SchemaReset bool
+}
+
+type grpcClientUrls struct {
+	Auth  string
 }
 
 func getAppEnv(varName string) string {

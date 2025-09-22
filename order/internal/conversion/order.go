@@ -17,8 +17,8 @@ func GetOrderInfoResponse(o *model.Order) *orderapi.GetOrderInfoResponse {
 	respItems := make([]*orderapi.Item, len(o.Items))
 	for i, item := range o.Items {
 		respItems[i] = &orderapi.Item{
-			Id:       int64(item.Id),
-			Quantity: int64(item.Quantity),
+			ProductId: int64(item.ProductId),
+			Quantity:  int64(item.Quantity),
 		}
 	}
 

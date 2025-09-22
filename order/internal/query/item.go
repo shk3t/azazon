@@ -12,7 +12,7 @@ import (
 func GetItemsByOrderId(ctx context.Context, orderId int) ([]model.Item, error) {
 	rows, _ := db.ConnPool.Query(
 		ctx, `
-		SELECT id, user_id, status, address, track
+		SELECT id, product_id, quantity
 		FROM item
 		WHERE order_id = $1`,
 		orderId,
@@ -27,13 +27,13 @@ func CreateOrderItems(ctx context.Context, tx pgx.Tx, orderId int, items []model
 
 	entries := make([][]any, len(items))
 	for i, item := range items {
-		entries[i] = []any{orderId, item.Id}
+		entries[i] = []any{orderId, item.ProductId, item.Quantity}
 	}
 
 	_, err := conn.CopyFrom(
 		ctx,
 		pgx.Identifier{"item"},
-		[]string{"order_id", "quantity"},
+		[]string{"order_id", "product_id", "quantity"},
 		pgx.CopyFromRows(entries),
 	)
 

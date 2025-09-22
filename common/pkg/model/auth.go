@@ -8,3 +8,7 @@ type AuthClaims struct {
 	Role   string
 	jwt.RegisteredClaims
 }
+
+func (c *AuthClaims) IsAdmin() bool {
+	return c.Role == "admin"
+}

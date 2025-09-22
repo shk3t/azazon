@@ -3,5 +3,5 @@ package model
 type OrderEvent struct {
 	OrderId   int
 	UserId    int
-	FullPrice int
+	FullPrice float64
 }

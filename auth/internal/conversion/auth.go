@@ -5,7 +5,9 @@ import (
 	"common/api/auth"
 )
 
-func User[R *auth.RegisterRequest | *auth.LoginRequest | *auth.UpdateUserRequest](r R) *model.User {
+func UserModel[R *auth.RegisterRequest | *auth.LoginRequest | *auth.UpdateUserRequest](
+	r R,
+) *model.User {
 	switch r := any(r).(type) {
 	case *auth.RegisterRequest:
 		return &model.User{

@@ -10,8 +10,8 @@ type Order struct {
 }
 
 type Item struct {
-	Id       int
-	Quantity int
+	ProductId int
+	Quantity  int
 }
 
 type OrderStatus int

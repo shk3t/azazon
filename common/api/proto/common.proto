@@ -7,5 +7,5 @@ option go_package = "common/internal/api/common";
 message OrderEvent {
     int64 order_id = 1;
     int64 user_id = 2;
-    int64 full_price = 3;
+    double full_price = 3;
 }

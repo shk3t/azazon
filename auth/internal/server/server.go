@@ -32,7 +32,7 @@ func (s *AuthServer) Register(
 	ctx context.Context,
 	in *auth.RegisterRequest,
 ) (*auth.RegisterResponse, error) {
-	resp, err := s.service.Register(ctx, *conv.User(in))
+	resp, err := s.service.Register(ctx, *conv.UserModel(in))
 	if err != nil {
 		return nil, err.Grpc()
 	}
@@ -43,7 +43,7 @@ func (s *AuthServer) Login(
 	ctx context.Context,
 	in *auth.LoginRequest,
 ) (*auth.LoginResponse, error) {
-	resp, err := s.service.Login(ctx, *conv.User(in))
+	resp, err := s.service.Login(ctx, *conv.UserModel(in))
 	if err != nil {
 		return nil, err.Grpc()
 	}
@@ -68,7 +68,7 @@ func (s *AuthServer) UpdateUser(
 	resp, err := s.service.UpdateUser(
 		ctx,
 		in.Token,
-		*conv.User(in),
+		*conv.UserModel(in),
 		sugar.Value(in.RoleKey),
 	)
 	if err != nil {
