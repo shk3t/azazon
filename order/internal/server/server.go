@@ -114,7 +114,7 @@ func (s *OrderServer) CreateOrder(
 					)
 				}
 
-				fullPrice100.Add(int64(resp.Stock.ProductPrice) * item.Quantity * 100)
+				fullPrice100.Add(int64(resp.Stock.Product.Price) * item.Quantity * 100)
 
 				return nil
 			},
