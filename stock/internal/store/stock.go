@@ -24,13 +24,13 @@ func (s *PostgreStockStore) Get(ctx context.Context, productId int) (model.Stock
 	return stock, err
 }
 
-func (s *PostgreStockStore) Save(ctx context.Context, stock model.Stock) (model.Stock, error) {
+func (s *PostgreStockStore) Save(ctx context.Context, tx pgx.Tx, stock model.Stock) (model.Stock, error) {
 	_, err := query.GetStockByProductId(ctx, stock.ProductId)
 
 	if errors.Is(err, pgx.ErrNoRows) {
-		_, err = query.CreateStock(ctx, nil, stock)
+		_, err = query.CreateStock(ctx, tx, stock)
 	} else {
-		err = query.UpdateStockByProductId(ctx, nil, stock)
+		err = query.UpdateStockByProductId(ctx, tx, stock)
 	}
 
 	return stock, err

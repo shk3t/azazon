@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"time"
 
 	"strconv"
 
@@ -31,8 +32,11 @@ func LoadEnv(workDir string) error {
 			Name:        getAppEnv("DB_NAME"),
 			SchemaReset: sugar.Default(strconv.ParseBool(getAppEnv("DB_SCHEMA_RESET"))),
 		},
+		ReserveTimeout: time.Second * time.Duration(
+			sugar.Default(strconv.Atoi(getAppEnv("RESERVE_TIMEOUT"))),
+		),
 		GrpcUrls: grpcClientUrls{
-			Auth:  "localhost:" + os.Getenv("AUTH_PORT"),
+			Auth: "localhost:" + os.Getenv("AUTH_PORT"),
 		},
 		KafkaBrokerHosts:   []string{"localhost:" + os.Getenv("KAFKA_PORT")},
 		KafkaSerialization: os.Getenv("KAFKA_SERIALIZATION"),
@@ -53,6 +57,7 @@ type envFields struct {
 	Test               bool
 	Db                 dbConfig
 	GrpcUrls           grpcClientUrls
+	ReserveTimeout     time.Duration
 	KafkaBrokerHosts   []string
 	KafkaSerialization string
 }
@@ -67,7 +72,7 @@ type dbConfig struct {
 }
 
 type grpcClientUrls struct {
-	Auth  string
+	Auth string
 }
 
 func getAppEnv(varName string) string {

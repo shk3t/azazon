@@ -10,3 +10,14 @@ CREATE TABLE stock (
     quantity INT NOT NULL,
     FOREIGN KEY (product_id) REFERENCES product(id) ON DELETE CASCADE
 );
+
+CREATE TABLE reserve (
+    id SERIAL PRIMARY KEY,
+    user_id INT NOT NULL,
+    order_id INT NOT NULL,
+    product_id INT NOT NULL,
+    quantity INT NOT NULL,
+    created_at DATETIME NOT NULL,
+    FOREIGN KEY (product_id) REFERENCES product(id) ON DELETE CASCADE
+    UNIQUE (order_id, product_id);
+);

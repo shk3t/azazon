@@ -1,5 +1,7 @@
 package model
 
+import "time"
+
 type Product struct {
 	Id    int
 	Name  string
@@ -8,5 +10,13 @@ type Product struct {
 
 type Stock struct {
 	ProductId int
-	Quantity int
+	Quantity  int
+}
+
+type Reserve struct {
+	UserId    int
+	OrderId   int
+	ProductId int
+	Quantity  int
+	CreatedAt time.Time
 }

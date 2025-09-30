@@ -15,6 +15,7 @@ import (
 	conv "stock/internal/conversion"
 	"stock/internal/model"
 	"stock/internal/service"
+	"time"
 
 	"google.golang.org/grpc"
 )
@@ -28,6 +29,7 @@ type StockServer struct {
 	service       *service.StockService
 	marshaler     convpkg.KafkaMarshaler
 	grpcConnector *serverpkg.GrpcConnector
+	bgCancel      context.CancelFunc
 }
 
 func NewStockServer(opts grpc.ServerOption) *StockServer {
@@ -37,6 +39,7 @@ func NewStockServer(opts grpc.ServerOption) *StockServer {
 		grpcConnector: serverpkg.NewGrpcConnector(),
 	}
 
+	s.initBackgroundJobs()
 	s.initGrpcClients()
 
 	s.GrpcServer = grpc.NewServer(opts)
@@ -48,6 +51,24 @@ func NewStockServer(opts grpc.ServerOption) *StockServer {
 
 func (s *StockServer) initGrpcClients() {
 	s.grpcConnector.Connect(consts.Services.Auth, config.Env.GrpcUrls.Auth)
+}
+
+func (s *StockServer) initBackgroundJobs() {
+	ticker := time.NewTicker(time.Minute)
+	ctx, cancel := context.WithCancel(context.Background())
+	s.bgCancel = cancel
+
+	go func() {
+		for {
+			select {
+			case <-ticker.C:
+				s.CancelReserve(ctx)
+			case <-ctx.Done():
+				ticker.Stop()
+				return
+			}
+		}
+	}()
 }
 
 func (s *StockServer) SaveProduct(
@@ -85,8 +106,8 @@ func (s *StockServer) SaveProduct(
 
 func (s *StockServer) IncreaseStockQuantity(
 	ctx context.Context,
-	in *stockapi.IncreaseStockQuantityRequest,
-) (*stockapi.IncreaseStockQuantityResponse, error) {
+	in *stockapi.ChangeStockQuantityRequest,
+) (*stockapi.ChangeStockQuantityResponse, error) {
 	authClient, _ := s.grpcConnector.GetAuthClient()
 	resp, err := authClient.ValidateToken(ctx, &auth.ValidateTokenRequest{Token: in.Token})
 	if err != nil {
@@ -97,7 +118,7 @@ func (s *StockServer) IncreaseStockQuantity(
 		return nil, NewErr(http.StatusForbidden, "Not enough user permissions")
 	}
 
-	stock, err := s.service.IncreaseStockQuantity(ctx, int(in.ProductId), int(in.QuantityDelta))
+	stock, err := s.service.ChangeStockQuantity(ctx, nil, int(in.ProductId), int(in.QuantityDelta))
 	if v, ok := err.(*grpcutil.ServiceError); ok && v != nil {
 		return nil, v.Grpc()
 	}
@@ -107,7 +128,46 @@ func (s *StockServer) IncreaseStockQuantity(
 		return nil, v.Grpc()
 	}
 
-	return &stockapi.IncreaseStockQuantityResponse{
+	return &stockapi.ChangeStockQuantityResponse{
+		Stock: conv.StockProto(product, stock),
+	}, nil
+}
+
+func (s *StockServer) Reserve(
+	ctx context.Context,
+	in *stockapi.ReserveRequest,
+) (*stockapi.ReserveResponse, error) {
+	authClient, _ := s.grpcConnector.GetAuthClient()
+	resp, err := authClient.ValidateToken(ctx, &auth.ValidateTokenRequest{Token: in.Token})
+	if err != nil {
+		return nil, err
+	} else if !resp.Valid {
+		return nil, NewErr(http.StatusUnauthorized, "Invalid Token")
+	}
+
+	claims, err := servicepkg.ParseJwtToken(in.Token)
+	if err != nil {
+		return nil, NewInternalErr(err)
+	}
+
+	reserve := model.Reserve{
+		UserId:    claims.UserId,
+		OrderId:   int(in.OrderId),
+		ProductId: int(in.ProductId),
+		Quantity:  int(in.Quantity),
+	}
+	undo := in.Undo != nil && *in.Undo
+	stock, err := s.service.Reserve(ctx, reserve, undo)
+	if v, ok := err.(*grpcutil.ServiceError); ok && v != nil {
+		return nil, v.Grpc()
+	}
+
+	product, err := s.service.GetProductInfo(ctx, int(in.ProductId))
+	if v, ok := err.(*grpcutil.ServiceError); ok && v != nil {
+		return nil, v.Grpc()
+	}
+
+	return &stockapi.ReserveResponse{
 		Stock: conv.StockProto(product, stock),
 	}, nil
 }
@@ -153,10 +213,16 @@ func (s *StockServer) DeleteProduct(
 	return &stockapi.DeleteProductResponse{}, nil
 }
 
+func (s *StockServer) CancelReserve(ctx context.Context) {
+	deprecationTime := time.Now().Add(-config.Env.ReserveTimeout)
+	s.service.UndoOldReserves(ctx, deprecationTime)
+}
+
 var allServers []*StockServer
 
 func Deinit() {
 	for _, s := range allServers {
 		s.GrpcServer.GracefulStop()
+		s.bgCancel()
 	}
 }
