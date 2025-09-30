@@ -47,16 +47,17 @@ func TestMain(m *testing.M) {
 	connector = serverpkg.NewTestConnector(logger)
 	connector.ConnectAll(
 		nil,
-		&[]consts.TopicName{consts.Topics.OrderConfirmed, consts.Topics.OrderCanceled},
+		&[]consts.TopicName{consts.Topics.OrderConfirmed, consts.Topics.OrderCancelling},
 		&kafka.ReaderConfig{
 			Brokers:          config.Env.KafkaBrokerHosts,
 			GroupID:          "payment_test_group",
 			StartOffset:      kafka.LastOffset,
-			RebalanceTimeout: 2 * time.Second,
 		},
 		&[]consts.TopicName{consts.Topics.OrderCreated},
 		&kafka.WriterConfig{Brokers: config.Env.KafkaBrokerHosts},
 	)
+
+	marshaler = conv.NewKafkaMarshaler(config.Env.KafkaSerialization)
 
 	logger.Println("Running tests...")
 	exitCode := m.Run()
@@ -72,7 +73,7 @@ func TestStartPayment(t *testing.T) {
 	require := require.New(t)
 	createdWriter := connector.GetKafkaWriter(consts.Topics.OrderCreated)
 	confirmedReader := connector.GetKafkaReader(consts.Topics.OrderConfirmed, true)
-	canceledReader := connector.GetKafkaReader(consts.Topics.OrderCanceled, true)
+	canceledReader := connector.GetKafkaReader(consts.Topics.OrderCancelling, true)
 
 	for _, testCase := range startPaymentTestCases {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)

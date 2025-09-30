@@ -19,10 +19,11 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	StockService_SaveProduct_FullMethodName           = "/stock.StockService/SaveProduct"
-	StockService_IncreaseStockQuantity_FullMethodName = "/stock.StockService/IncreaseStockQuantity"
-	StockService_GetStockInfo_FullMethodName          = "/stock.StockService/GetStockInfo"
-	StockService_DeleteProduct_FullMethodName         = "/stock.StockService/DeleteProduct"
+	StockService_SaveProduct_FullMethodName         = "/stock.StockService/SaveProduct"
+	StockService_ChangeStockQuantity_FullMethodName = "/stock.StockService/ChangeStockQuantity"
+	StockService_Reserve_FullMethodName             = "/stock.StockService/Reserve"
+	StockService_GetStockInfo_FullMethodName        = "/stock.StockService/GetStockInfo"
+	StockService_DeleteProduct_FullMethodName       = "/stock.StockService/DeleteProduct"
 )
 
 // StockServiceClient is the client API for StockService service.
@@ -30,7 +31,8 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type StockServiceClient interface {
 	SaveProduct(ctx context.Context, in *SaveProductRequest, opts ...grpc.CallOption) (*SaveProductResponse, error)
-	IncreaseStockQuantity(ctx context.Context, in *IncreaseStockQuantityRequest, opts ...grpc.CallOption) (*IncreaseStockQuantityResponse, error)
+	ChangeStockQuantity(ctx context.Context, in *ChangeStockQuantityRequest, opts ...grpc.CallOption) (*ChangeStockQuantityResponse, error)
+	Reserve(ctx context.Context, in *ReserveRequest, opts ...grpc.CallOption) (*ReserveResponse, error)
 	GetStockInfo(ctx context.Context, in *GetStockInfoRequest, opts ...grpc.CallOption) (*GetStockInfoResponse, error)
 	DeleteProduct(ctx context.Context, in *DeleteProductRequest, opts ...grpc.CallOption) (*DeleteProductResponse, error)
 }
@@ -53,10 +55,20 @@ func (c *stockServiceClient) SaveProduct(ctx context.Context, in *SaveProductReq
 	return out, nil
 }
 
-func (c *stockServiceClient) IncreaseStockQuantity(ctx context.Context, in *IncreaseStockQuantityRequest, opts ...grpc.CallOption) (*IncreaseStockQuantityResponse, error) {
+func (c *stockServiceClient) ChangeStockQuantity(ctx context.Context, in *ChangeStockQuantityRequest, opts ...grpc.CallOption) (*ChangeStockQuantityResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(IncreaseStockQuantityResponse)
-	err := c.cc.Invoke(ctx, StockService_IncreaseStockQuantity_FullMethodName, in, out, cOpts...)
+	out := new(ChangeStockQuantityResponse)
+	err := c.cc.Invoke(ctx, StockService_ChangeStockQuantity_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *stockServiceClient) Reserve(ctx context.Context, in *ReserveRequest, opts ...grpc.CallOption) (*ReserveResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ReserveResponse)
+	err := c.cc.Invoke(ctx, StockService_Reserve_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -88,7 +100,8 @@ func (c *stockServiceClient) DeleteProduct(ctx context.Context, in *DeleteProduc
 // for forward compatibility.
 type StockServiceServer interface {
 	SaveProduct(context.Context, *SaveProductRequest) (*SaveProductResponse, error)
-	IncreaseStockQuantity(context.Context, *IncreaseStockQuantityRequest) (*IncreaseStockQuantityResponse, error)
+	ChangeStockQuantity(context.Context, *ChangeStockQuantityRequest) (*ChangeStockQuantityResponse, error)
+	Reserve(context.Context, *ReserveRequest) (*ReserveResponse, error)
 	GetStockInfo(context.Context, *GetStockInfoRequest) (*GetStockInfoResponse, error)
 	DeleteProduct(context.Context, *DeleteProductRequest) (*DeleteProductResponse, error)
 	mustEmbedUnimplementedStockServiceServer()
@@ -104,8 +117,11 @@ type UnimplementedStockServiceServer struct{}
 func (UnimplementedStockServiceServer) SaveProduct(context.Context, *SaveProductRequest) (*SaveProductResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SaveProduct not implemented")
 }
-func (UnimplementedStockServiceServer) IncreaseStockQuantity(context.Context, *IncreaseStockQuantityRequest) (*IncreaseStockQuantityResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method IncreaseStockQuantity not implemented")
+func (UnimplementedStockServiceServer) ChangeStockQuantity(context.Context, *ChangeStockQuantityRequest) (*ChangeStockQuantityResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ChangeStockQuantity not implemented")
+}
+func (UnimplementedStockServiceServer) Reserve(context.Context, *ReserveRequest) (*ReserveResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Reserve not implemented")
 }
 func (UnimplementedStockServiceServer) GetStockInfo(context.Context, *GetStockInfoRequest) (*GetStockInfoResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetStockInfo not implemented")
@@ -152,20 +168,38 @@ func _StockService_SaveProduct_Handler(srv interface{}, ctx context.Context, dec
 	return interceptor(ctx, in, info, handler)
 }
 
-func _StockService_IncreaseStockQuantity_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(IncreaseStockQuantityRequest)
+func _StockService_ChangeStockQuantity_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ChangeStockQuantityRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(StockServiceServer).IncreaseStockQuantity(ctx, in)
+		return srv.(StockServiceServer).ChangeStockQuantity(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: StockService_IncreaseStockQuantity_FullMethodName,
+		FullMethod: StockService_ChangeStockQuantity_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(StockServiceServer).IncreaseStockQuantity(ctx, req.(*IncreaseStockQuantityRequest))
+		return srv.(StockServiceServer).ChangeStockQuantity(ctx, req.(*ChangeStockQuantityRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _StockService_Reserve_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ReserveRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(StockServiceServer).Reserve(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: StockService_Reserve_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(StockServiceServer).Reserve(ctx, req.(*ReserveRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -218,8 +252,12 @@ var StockService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _StockService_SaveProduct_Handler,
 		},
 		{
-			MethodName: "IncreaseStockQuantity",
-			Handler:    _StockService_IncreaseStockQuantity_Handler,
+			MethodName: "ChangeStockQuantity",
+			Handler:    _StockService_ChangeStockQuantity_Handler,
+		},
+		{
+			MethodName: "Reserve",
+			Handler:    _StockService_Reserve_Handler,
 		},
 		{
 			MethodName: "GetStockInfo",

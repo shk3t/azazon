@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"time"
 
 	"strconv"
 
@@ -20,9 +21,12 @@ func LoadEnv(workDir string) error {
 	}
 
 	Env = envFields{
-		Port:               sugar.Default(strconv.Atoi(getAppEnv("PORT"))),
-		TestPort:           sugar.Default(strconv.Atoi(getAppEnv("TEST_PORT"))),
-		Test:               sugar.Default(strconv.ParseBool(getAppEnv("TEST"))),
+		Port:     sugar.Default(strconv.Atoi(getAppEnv("PORT"))),
+		TestPort: sugar.Default(strconv.Atoi(getAppEnv("TEST_PORT"))),
+		Test:     sugar.Default(strconv.ParseBool(getAppEnv("TEST"))),
+		PayTimeout: time.Second * time.Duration(
+			sugar.Default(strconv.Atoi(getAppEnv("PAY_TIMEOUT"))),
+		),
 		KafkaBrokerHosts:   []string{"localhost:" + os.Getenv("KAFKA_PORT")},
 		KafkaSerialization: os.Getenv("KAFKA_SERIALIZATION"),
 	}
@@ -36,6 +40,7 @@ type envFields struct {
 	Port               int
 	TestPort           int
 	Test               bool
+	PayTimeout         time.Duration
 	KafkaBrokerHosts   []string
 	KafkaSerialization string
 }

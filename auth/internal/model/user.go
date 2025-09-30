@@ -17,7 +17,7 @@ var UserRoles = struct {
 type User struct {
 	Id           int
 	Login        string
-	Password     string
+	Password     string `db:"-"`
 	PasswordHash string
 	Role         userRole
 }

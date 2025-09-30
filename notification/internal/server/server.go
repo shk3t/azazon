@@ -10,7 +10,6 @@ import (
 	"context"
 	"notification/internal/config"
 	"notification/internal/service"
-	"time"
 
 	"github.com/segmentio/kafka-go"
 	"google.golang.org/grpc"
@@ -42,16 +41,15 @@ func NewNotificationServer(opts grpc.ServerOption) *NotificationServer {
 
 func (s *NotificationServer) initKafka() {
 	readerHandlers := map[consts.TopicName]serverpkg.KafkaMessageHandlerFunc{
-		consts.Topics.OrderCreated:   s.HandleOrderCreated,
-		consts.Topics.OrderConfirmed: s.HandleOrderConfirmed,
-		consts.Topics.OrderCanceled:  s.HandleOrderCanceled,
+		consts.Topics.OrderCreated:    s.HandleOrderCreated,
+		consts.Topics.OrderConfirmed:  s.HandleOrderConfirmed,
+		consts.Topics.OrderCancelling: s.HandleOrderCanceled,
 	}
 	readerTopics := helper.MapKeys(readerHandlers)
 	readerConfig := kafka.ReaderConfig{
-		Brokers:          config.Env.KafkaBrokerHosts,
-		GroupID:          "notification_group",
-		StartOffset:      kafka.LastOffset, // comment in, comment out if kafka bugs in tests
-		RebalanceTimeout: 2 * time.Second,
+		Brokers:     config.Env.KafkaBrokerHosts,
+		GroupID:     "notification_group",
+		StartOffset: kafka.LastOffset, // comment in, comment out if kafka bugs in tests
 	}
 
 	s.kafkaConnector.ConnectAll(&readerTopics, &readerConfig, nil, nil)

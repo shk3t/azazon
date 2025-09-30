@@ -4,4 +4,5 @@ import "errors"
 
 var (
 	NotFound = errors.New("Not found")
+	Duplicate = errors.New("Duplicate")
 )

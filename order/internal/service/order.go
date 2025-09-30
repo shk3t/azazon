@@ -28,15 +28,15 @@ func NewOrderService() *OrderService {
 	}
 }
 
-func (s *OrderService) CreateOrder(
+func (s *OrderService) SaveOrder(
 	ctx context.Context,
 	body model.Order,
-) (orderId int, sErr *grpcutil.ServiceError) {
+) (*model.Order, *grpcutil.ServiceError) {
 	order, err := s.store.Save(ctx, body)
 	if err != nil {
-		return 0, NewInternalErr(err)
+		return nil, NewInternalErr(err)
 	}
-	return order.Id, nil
+	return &order, nil
 }
 
 func (s *OrderService) GetOrderInfo(

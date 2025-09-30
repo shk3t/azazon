@@ -77,9 +77,9 @@ func TestOrderCreated(t *testing.T) {
 		require.NoError(err)
 
 		if i == 0 {
-			time.Sleep(3 * time.Second)
+			time.Sleep(10 * time.Second)
 		} else {
-			time.Sleep(10 * time.Millisecond)
+			time.Sleep(100 * time.Millisecond)
 		}
 
 		messages, err := service.ReadEmails(

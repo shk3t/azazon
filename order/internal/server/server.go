@@ -7,11 +7,11 @@ import (
 	"common/pkg/consts"
 	convpkg "common/pkg/conversion"
 	"common/pkg/grpcutil"
+	"common/pkg/helper"
 	"common/pkg/log"
 	serverpkg "common/pkg/server"
 	servicepkg "common/pkg/service"
 	"context"
-	"fmt"
 	"net/http"
 	"order/internal/config"
 	conv "order/internal/conversion"
@@ -61,9 +61,29 @@ func (s *OrderServer) initGrpcClients() {
 }
 
 func (s *OrderServer) initKafka() {
-	writerConfig := kafka.WriterConfig{Brokers: config.Env.KafkaBrokerHosts}
-	writerTopics := []consts.TopicName{consts.Topics.OrderCreated}
-	s.kafkaConnector.ConnectAll(nil, nil, &writerTopics, &writerConfig)
+	readerHandlers := map[consts.TopicName]serverpkg.KafkaMessageHandlerFunc{
+		consts.Topics.OrderCancelling: s.CancelOrder,
+	}
+	readerTopics := helper.MapKeys(readerHandlers)
+	readerConfig := kafka.ReaderConfig{
+		Brokers:     config.Env.KafkaBrokerHosts,
+		GroupID:     "order_group",
+		StartOffset: kafka.LastOffset,
+	}
+
+	writerConfig := kafka.WriterConfig{
+		Brokers:      config.Env.KafkaBrokerHosts,
+		RequiredAcks: int(kafka.RequireAll),
+	}
+	writerTopics := []consts.TopicName{
+		consts.Topics.OrderCreated,
+		consts.Topics.OrderCancelled,
+	}
+
+	s.kafkaConnector.ConnectAll(&readerTopics, &readerConfig, &writerTopics, &writerConfig)
+	for topic, handler := range readerHandlers {
+		s.kafkaConnector.AttachReaderHandler(topic, handler)
+	}
 }
 
 func (s *OrderServer) CreateOrder(
@@ -100,18 +120,12 @@ func (s *OrderServer) CreateOrder(
 	for _, item := range in.Items {
 		eg.Go(
 			func() error {
-				resp, err := stockClient.GetStockInfo(egCtx, &stock.GetStockInfoRequest{
+				resp, err := stockClient.Reserve(egCtx, &stock.ReserveRequest{
 					ProductId: item.ProductId,
+					Quantity:  item.Quantity,
 				})
 				if err != nil {
 					return err
-				}
-
-				if resp.Stock.Quantity < item.Quantity {
-					return NewErr(
-						http.StatusBadRequest,
-						fmt.Sprintf("Not enough product_%d in stock", item.ProductId),
-					)
 				}
 
 				fullPrice100.Add(int64(resp.Stock.Product.Price) * item.Quantity * 100)
@@ -125,16 +139,18 @@ func (s *OrderServer) CreateOrder(
 		return nil, err
 	}
 
-	order.Id, err = s.service.CreateOrder(ctx, order)
+	newOrder, err := s.service.SaveOrder(ctx, order)
 	if v, ok := err.(*grpcutil.ServiceError); ok && v != nil {
 		return nil, v.Grpc()
 	}
 
-	orderEvent := conv.OrderEvent(&order)
+	orderEvent := conv.OrderEvent(newOrder)
 	orderEvent.FullPrice = float64(fullPrice100.Load()) / 100
-
 	msg := s.marshaler.MarshalOrderEvent(orderEvent)
-	s.kafkaConnector.Writers[consts.Topics.OrderCreated].WriteMessages(ctx, msg)
+	err = s.kafkaConnector.Writers[consts.Topics.OrderCreated].WriteMessages(ctx, msg)  // TODO: CUR | Чем плохо отсутствие идемпотентной публикации
+	if err != nil {
+		return nil, err
+	}
 
 	return &orderapi.CreateOrderResponse{OrderId: int64(order.Id)}, nil
 }
@@ -148,6 +164,53 @@ func (s *OrderServer) GetOrderInfo(
 		return nil, err.Grpc()
 	}
 	return conv.GetOrderInfoResponse(order), nil
+}
+
+// TODO: use CommitMessage()
+func (s *OrderServer) CancelOrder(ctx context.Context, msg kafka.Message) error {
+	stockClient, _ := s.grpcConnector.GetStockClient()
+
+	orderEvent, err := s.marshaler.UnmarshalOrderEvent(msg)
+	if err != nil {
+		return err
+	}
+
+	order, err := s.service.GetOrderInfo(ctx, orderEvent.OrderId)
+	if v, ok := err.(*grpcutil.ServiceError); ok && v != nil {
+		return err
+	}
+
+	trueValue := true
+	eg, egCtx := errgroup.WithContext(ctx)
+	for _, item := range order.Items {
+		eg.Go(
+			func() error {
+				_, err := stockClient.Reserve(egCtx, &stock.ReserveRequest{
+					ProductId: int64(item.ProductId),
+					Quantity:  int64(item.Quantity),
+					Undo:      &trueValue,
+				})
+				return err
+			},
+		)
+	}
+
+	if err := eg.Wait(); err != nil {
+		return err
+	}
+
+	order.Status = model.CancelledStatus
+	_, err = s.service.SaveOrder(ctx, *order)
+	if v, ok := err.(*grpcutil.ServiceError); ok && v != nil {
+		return err
+	}
+
+	err = s.kafkaConnector.Writers[consts.Topics.OrderCancelled].WriteMessages(ctx, msg)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 var allServers []*OrderServer

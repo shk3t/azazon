@@ -6,7 +6,8 @@ option go_package = "common/internal/api/stock";
 
 service StockService {
     rpc SaveProduct(SaveProductRequest) returns (SaveProductResponse);
-    rpc IncreaseStockQuantity(IncreaseStockQuantityRequest) returns (IncreaseStockQuantityResponse);
+    rpc ChangeStockQuantity(ChangeStockQuantityRequest) returns (ChangeStockQuantityResponse);
+    rpc Reserve(ReserveRequest) returns (ReserveResponse);
     rpc GetStockInfo(GetStockInfoRequest) returns (GetStockInfoResponse);
     rpc DeleteProduct(DeleteProductRequest) returns (DeleteProductResponse);
 }
@@ -31,13 +32,24 @@ message SaveProductRequest {
 
 message SaveProductResponse { Stock stock = 1; }
 
-message IncreaseStockQuantityRequest {
+message ChangeStockQuantityRequest {
     string token = 1;
     int64 product_id = 2;
     int64 quantity_delta = 3;
 }
 
-message IncreaseStockQuantityResponse { Stock stock = 1; }
+
+message ChangeStockQuantityResponse { Stock stock = 1; }
+
+message ReserveRequest {
+    string token = 1;
+    int64 order_id = 2;
+    int64 product_id = 3;
+    int64 quantity = 4;
+    optional bool undo = 5;
+}
+
+message ReserveResponse { Stock stock = 1; }
 
 message GetStockInfoRequest { int64 product_id = 1; }
 

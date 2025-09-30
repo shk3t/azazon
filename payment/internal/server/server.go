@@ -49,15 +49,15 @@ func (s *PaymentServer) initKafka() {
 		Brokers:          config.Env.KafkaBrokerHosts,
 		GroupID:          "payment_group",
 		StartOffset:      kafka.LastOffset,
-		RebalanceTimeout: 2 * time.Second,
 	}
 
 	writerConfig := kafka.WriterConfig{
-		Brokers: config.Env.KafkaBrokerHosts,
+		Brokers:      config.Env.KafkaBrokerHosts,
+		RequiredAcks: int(kafka.RequireAll),
 	}
 	writerTopics := []consts.TopicName{
 		consts.Topics.OrderConfirmed,
-		consts.Topics.OrderCanceled,
+		consts.Topics.OrderCancelling,
 	}
 
 	s.kafkaConnector.ConnectAll(&readerTopics, &readerConfig, &writerTopics, &writerConfig)
@@ -66,9 +66,16 @@ func (s *PaymentServer) initKafka() {
 	}
 }
 
+// TODO: use CommitMessage()
 func (s *PaymentServer) StartPayment(ctx context.Context, msg kafka.Message) error {
 	event, err := s.marshaler.UnmarshalOrderEvent(msg)
 	if err != nil {
+		return err
+	}
+
+	if time.Since(msg.Time) > config.Env.PayTimeout {
+		newMsg := kafka.Message{Key: msg.Key, Value: msg.Value}
+		err = s.kafkaConnector.Writers[consts.Topics.OrderCancelling].WriteMessages(ctx, newMsg)
 		return err
 	}
 
@@ -78,7 +85,7 @@ func (s *PaymentServer) StartPayment(ctx context.Context, msg kafka.Message) err
 	if err == nil {
 		err = s.kafkaConnector.Writers[consts.Topics.OrderConfirmed].WriteMessages(ctx, newMsg)
 	} else {
-		err = s.kafkaConnector.Writers[consts.Topics.OrderCanceled].WriteMessages(ctx, newMsg)
+		err = s.kafkaConnector.Writers[consts.Topics.OrderCancelling].WriteMessages(ctx, newMsg)
 	}
 
 	return err
