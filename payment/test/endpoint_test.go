@@ -47,7 +47,7 @@ func TestMain(m *testing.M) {
 	connector = serverpkg.NewTestConnector(logger)
 	connector.ConnectAll(
 		nil,
-		&[]consts.TopicName{consts.Topics.OrderConfirmed, consts.Topics.OrderCancelling},
+		&[]consts.TopicName{consts.Topics.OrderConfirmed, consts.Topics.OrderCanceled},
 		&kafka.ReaderConfig{
 			Brokers:          config.Env.KafkaBrokerHosts,
 			GroupID:          "payment_test_group",
@@ -73,7 +73,7 @@ func TestStartPayment(t *testing.T) {
 	require := require.New(t)
 	createdWriter := connector.GetKafkaWriter(consts.Topics.OrderCreated)
 	confirmedReader := connector.GetKafkaReader(consts.Topics.OrderConfirmed, true)
-	canceledReader := connector.GetKafkaReader(consts.Topics.OrderCancelling, true)
+	canceledReader := connector.GetKafkaReader(consts.Topics.OrderCanceled, true)
 
 	for _, testCase := range startPaymentTestCases {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)

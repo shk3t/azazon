@@ -355,7 +355,6 @@ type ReserveRequest struct {
 	OrderId       int64                  `protobuf:"varint,2,opt,name=order_id,json=orderId,proto3" json:"order_id,omitempty"`
 	ProductId     int64                  `protobuf:"varint,3,opt,name=product_id,json=productId,proto3" json:"product_id,omitempty"`
 	Quantity      int64                  `protobuf:"varint,4,opt,name=quantity,proto3" json:"quantity,omitempty"`
-	Undo          *bool                  `protobuf:"varint,5,opt,name=undo,proto3,oneof" json:"undo,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -416,13 +415,6 @@ func (x *ReserveRequest) GetQuantity() int64 {
 		return x.Quantity
 	}
 	return 0
-}
-
-func (x *ReserveRequest) GetUndo() bool {
-	if x != nil && x.Undo != nil {
-		return *x.Undo
-	}
-	return false
 }
 
 type ReserveResponse struct {
@@ -672,15 +664,13 @@ const file_stock_proto_rawDesc = "" +
 	"product_id\x18\x02 \x01(\x03R\tproductId\x12%\n" +
 	"\x0equantity_delta\x18\x03 \x01(\x03R\rquantityDelta\"A\n" +
 	"\x1bChangeStockQuantityResponse\x12\"\n" +
-	"\x05stock\x18\x01 \x01(\v2\f.stock.StockR\x05stock\"\x9e\x01\n" +
+	"\x05stock\x18\x01 \x01(\v2\f.stock.StockR\x05stock\"|\n" +
 	"\x0eReserveRequest\x12\x14\n" +
 	"\x05token\x18\x01 \x01(\tR\x05token\x12\x19\n" +
 	"\border_id\x18\x02 \x01(\x03R\aorderId\x12\x1d\n" +
 	"\n" +
 	"product_id\x18\x03 \x01(\x03R\tproductId\x12\x1a\n" +
-	"\bquantity\x18\x04 \x01(\x03R\bquantity\x12\x17\n" +
-	"\x04undo\x18\x05 \x01(\bH\x00R\x04undo\x88\x01\x01B\a\n" +
-	"\x05_undo\"5\n" +
+	"\bquantity\x18\x04 \x01(\x03R\bquantity\"5\n" +
 	"\x0fReserveResponse\x12\"\n" +
 	"\x05stock\x18\x01 \x01(\v2\f.stock.StockR\x05stock\"4\n" +
 	"\x13GetStockInfoRequest\x12\x1d\n" +
@@ -756,7 +746,6 @@ func file_stock_proto_init() {
 		return
 	}
 	file_stock_proto_msgTypes[2].OneofWrappers = []any{}
-	file_stock_proto_msgTypes[6].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

@@ -40,10 +40,10 @@ func NewNotificationServer(opts grpc.ServerOption) *NotificationServer {
 }
 
 func (s *NotificationServer) initKafka() {
-	readerHandlers := map[consts.TopicName]serverpkg.KafkaMessageHandlerFunc{
+	readerHandlers := map[consts.TopicName]serverpkg.KafkaReadHandlerFunc{
 		consts.Topics.OrderCreated:    s.HandleOrderCreated,
 		consts.Topics.OrderConfirmed:  s.HandleOrderConfirmed,
-		consts.Topics.OrderCancelling: s.HandleOrderCanceled,
+		consts.Topics.OrderCanceled: s.HandleOrderCanceled,
 	}
 	readerTopics := helper.MapKeys(readerHandlers)
 	readerConfig := kafka.ReaderConfig{
@@ -54,7 +54,7 @@ func (s *NotificationServer) initKafka() {
 
 	s.kafkaConnector.ConnectAll(&readerTopics, &readerConfig, nil, nil)
 	for topic, handler := range readerHandlers {
-		s.kafkaConnector.AttachReaderHandler(topic, handler)
+		s.kafkaConnector.AttachReadHandler(topic, handler)
 	}
 }
 

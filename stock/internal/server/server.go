@@ -6,6 +6,8 @@ import (
 	"common/pkg/consts"
 	convpkg "common/pkg/conversion"
 	"common/pkg/grpcutil"
+	"common/pkg/helper"
+	"common/pkg/log"
 	serverpkg "common/pkg/server"
 	servicepkg "common/pkg/service"
 	"common/pkg/sugar"
@@ -17,6 +19,7 @@ import (
 	"stock/internal/service"
 	"time"
 
+	"github.com/segmentio/kafka-go"
 	"google.golang.org/grpc"
 )
 
@@ -25,32 +28,31 @@ var NewInternalErr = grpcutil.NewInternalGrpcError
 
 type StockServer struct {
 	stockapi.UnimplementedStockServiceServer
-	GrpcServer    *grpc.Server
-	service       *service.StockService
-	marshaler     convpkg.KafkaMarshaler
-	grpcConnector *serverpkg.GrpcConnector
-	bgCancel      context.CancelFunc
+	GrpcServer     *grpc.Server
+	service        *service.StockService
+	marshaler      convpkg.KafkaMarshaler
+	bgCancel       context.CancelFunc
+	grpcConnector  *serverpkg.GrpcConnector
+	kafkaConnector *serverpkg.KafkaConnector
 }
 
 func NewStockServer(opts grpc.ServerOption) *StockServer {
 	s := &StockServer{
-		service:       service.NewStockService(),
-		marshaler:     convpkg.NewKafkaMarshaler(config.Env.KafkaSerialization),
-		grpcConnector: serverpkg.NewGrpcConnector(),
+		service:        service.NewStockService(),
+		marshaler:      convpkg.NewKafkaMarshaler(config.Env.KafkaSerialization),
+		grpcConnector:  serverpkg.NewGrpcConnector(),
+		kafkaConnector: serverpkg.NewKafkaConnector(log.Loggers.Event),
 	}
 
 	s.initBackgroundJobs()
 	s.initGrpcClients()
+	s.initKafka()
 
 	s.GrpcServer = grpc.NewServer(opts)
 	stockapi.RegisterStockServiceServer(s.GrpcServer, s)
 
 	allServers = append(allServers, s)
 	return s
-}
-
-func (s *StockServer) initGrpcClients() {
-	s.grpcConnector.Connect(consts.Services.Auth, config.Env.GrpcUrls.Auth)
 }
 
 func (s *StockServer) initBackgroundJobs() {
@@ -62,13 +64,38 @@ func (s *StockServer) initBackgroundJobs() {
 		for {
 			select {
 			case <-ticker.C:
-				s.CancelReserve(ctx)
+				err := s.UndoOldReserves(ctx)
+				if err != nil {
+					log.Loggers.Event.Println(err)
+				}
 			case <-ctx.Done():
 				ticker.Stop()
 				return
 			}
 		}
 	}()
+}
+
+func (s *StockServer) initGrpcClients() {
+	s.grpcConnector.Connect(consts.Services.Auth, config.Env.GrpcUrls.Auth)
+}
+
+func (s *StockServer) initKafka() {
+	fetchHandlers := map[consts.TopicName]serverpkg.KafkaFetchHandlerFunc{
+		consts.Topics.OrderConfirmed: s.DeleteConfirmedOrderReserves,
+		consts.Topics.OrderCanceled:  s.UndoCanceledOrderReserves,
+	}
+	readerTopics := helper.MapKeys(fetchHandlers)
+	readerConfig := kafka.ReaderConfig{
+		Brokers:     config.Env.KafkaBrokerHosts,
+		GroupID:     "stock_group",
+		StartOffset: kafka.LastOffset,
+	}
+
+	s.kafkaConnector.ConnectAll(&readerTopics, &readerConfig, nil, nil)
+	for topic, handler := range fetchHandlers {
+		s.kafkaConnector.AttachFetchHandler(topic, handler)
+	}
 }
 
 func (s *StockServer) SaveProduct(
@@ -156,8 +183,7 @@ func (s *StockServer) Reserve(
 		ProductId: int(in.ProductId),
 		Quantity:  int(in.Quantity),
 	}
-	undo := in.Undo != nil && *in.Undo
-	stock, err := s.service.Reserve(ctx, reserve, undo)
+	stock, err := s.service.Reserve(ctx, reserve, false)
 	if v, ok := err.(*grpcutil.ServiceError); ok && v != nil {
 		return nil, v.Grpc()
 	}
@@ -170,6 +196,68 @@ func (s *StockServer) Reserve(
 	return &stockapi.ReserveResponse{
 		Stock: conv.StockProto(product, stock),
 	}, nil
+}
+
+func (s *StockServer) DeleteConfirmedOrderReserves(
+	ctx context.Context,
+	msg kafka.Message,
+	commit serverpkg.KafkaHandlerCommit,
+) error {
+	orderEvent, err := s.marshaler.UnmarshalOrderEvent(msg)
+	if err != nil {
+		return err
+	}
+
+	err = s.service.DeleteReserves(ctx, orderEvent.OrderId)
+	if err != nil {
+		return err
+	}
+
+	commit()
+	return nil
+}
+
+func (s *StockServer) UndoCanceledOrderReserves(
+	ctx context.Context,
+	msg kafka.Message,
+	commit serverpkg.KafkaHandlerCommit,
+) error {
+	orderEvent, err := s.marshaler.UnmarshalOrderEvent(msg)
+	if err != nil {
+		return err
+	}
+
+	reserves, err := s.service.GetReserves(ctx, orderEvent.OrderId)
+	if err != nil {
+		return err
+	}
+
+	for _, reserve := range reserves {
+		_, err := s.service.Reserve(ctx, reserve, true)
+		if err != nil {
+			return err
+		}
+	}
+
+	commit()
+	return nil
+}
+
+func (s *StockServer) UndoOldReserves(ctx context.Context) error {
+	deprecationTime := time.Now().Add(-config.Env.ReserveTimeout)
+	reserves, err := s.service.GetOldReserves(ctx, deprecationTime)
+	if err != nil {
+		return err
+	}
+
+	for _, reserve := range reserves {
+		_, err := s.service.Reserve(ctx, reserve, true)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (s *StockServer) GetStockInfo(
@@ -213,15 +301,12 @@ func (s *StockServer) DeleteProduct(
 	return &stockapi.DeleteProductResponse{}, nil
 }
 
-func (s *StockServer) CancelReserve(ctx context.Context) {
-	deprecationTime := time.Now().Add(-config.Env.ReserveTimeout)
-	s.service.UndoOldReserves(ctx, deprecationTime)
-}
-
 var allServers []*StockServer
 
 func Deinit() {
 	for _, s := range allServers {
+		s.grpcConnector.DisconnectAll()
+		s.kafkaConnector.DisconnectAll()
 		s.GrpcServer.GracefulStop()
 		s.bgCancel()
 	}

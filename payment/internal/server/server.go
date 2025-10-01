@@ -41,10 +41,10 @@ func NewPaymentServer(opts grpc.ServerOption) *PaymentServer {
 }
 
 func (s *PaymentServer) initKafka() {
-	readerHandlers := map[consts.TopicName]serverpkg.KafkaMessageHandlerFunc{
+	fetchHandlers := map[consts.TopicName]serverpkg.KafkaFetchHandlerFunc{
 		consts.Topics.OrderCreated: s.StartPayment,
 	}
-	readerTopics := helper.MapKeys(readerHandlers)
+	readerTopics := helper.MapKeys(fetchHandlers)
 	readerConfig := kafka.ReaderConfig{
 		Brokers:          config.Env.KafkaBrokerHosts,
 		GroupID:          "payment_group",
@@ -57,17 +57,20 @@ func (s *PaymentServer) initKafka() {
 	}
 	writerTopics := []consts.TopicName{
 		consts.Topics.OrderConfirmed,
-		consts.Topics.OrderCancelling,
+		consts.Topics.OrderCanceled,
 	}
 
 	s.kafkaConnector.ConnectAll(&readerTopics, &readerConfig, &writerTopics, &writerConfig)
-	for topic, handler := range readerHandlers {
-		s.kafkaConnector.AttachReaderHandler(topic, handler)
+	for topic, handler := range fetchHandlers {
+		s.kafkaConnector.AttachFetchHandler(topic, handler)
 	}
 }
 
-// TODO: use CommitMessage()
-func (s *PaymentServer) StartPayment(ctx context.Context, msg kafka.Message) error {
+func (s *PaymentServer) StartPayment(
+	ctx context.Context,
+	msg kafka.Message,
+	commit serverpkg.KafkaHandlerCommit,
+) error {
 	event, err := s.marshaler.UnmarshalOrderEvent(msg)
 	if err != nil {
 		return err
@@ -75,17 +78,20 @@ func (s *PaymentServer) StartPayment(ctx context.Context, msg kafka.Message) err
 
 	if time.Since(msg.Time) > config.Env.PayTimeout {
 		newMsg := kafka.Message{Key: msg.Key, Value: msg.Value}
-		err = s.kafkaConnector.Writers[consts.Topics.OrderCancelling].WriteMessages(ctx, newMsg)
+		err = s.kafkaConnector.Writers[consts.Topics.OrderCanceled].WriteMessages(ctx, newMsg)
 		return err
 	}
 
-	err = s.service.StartPayment(ctx, *event)
+	err = s.service.StartPayment(ctx, *event)  // TODO: идемпотентно обрабатывать
 
+	commit()
+
+	// TODO: добавить Outbox
 	newMsg := kafka.Message{Key: msg.Key, Value: msg.Value}
 	if err == nil {
 		err = s.kafkaConnector.Writers[consts.Topics.OrderConfirmed].WriteMessages(ctx, newMsg)
 	} else {
-		err = s.kafkaConnector.Writers[consts.Topics.OrderCancelling].WriteMessages(ctx, newMsg)
+		err = s.kafkaConnector.Writers[consts.Topics.OrderCanceled].WriteMessages(ctx, newMsg)
 	}
 
 	return err

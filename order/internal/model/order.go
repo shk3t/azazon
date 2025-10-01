@@ -18,5 +18,5 @@ type OrderStatus int
 
 const (
 	ConfirmedStatus OrderStatus = 1
-	CancelledStatus OrderStatus = 3
+	CanceledStatus OrderStatus = 3
 )

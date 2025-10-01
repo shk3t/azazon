@@ -10,7 +10,9 @@ import (
 	"github.com/segmentio/kafka-go"
 )
 
-type KafkaMessageHandlerFunc func(ctx context.Context, msg kafka.Message) error
+type KafkaReadHandlerFunc func(ctx context.Context, msg kafka.Message) error
+type KafkaFetchHandlerFunc func(ctx context.Context, msg kafka.Message, commit KafkaHandlerCommit) error
+type KafkaHandlerCommit func() error
 
 type KafkaConnector struct {
 	Readers   map[consts.TopicName]*kafka.Reader
@@ -52,9 +54,9 @@ func (c *KafkaConnector) ConnectAll(
 	}
 }
 
-func (c *KafkaConnector) AttachReaderHandler(
+func (c *KafkaConnector) AttachReadHandler(
 	topic consts.TopicName,
-	handlerFunc KafkaMessageHandlerFunc,
+	handlerFunc KafkaReadHandlerFunc,
 ) {
 	reader := c.Readers[topic]
 
@@ -70,6 +72,35 @@ func (c *KafkaConnector) AttachReaderHandler(
 			}
 
 			if err = handlerFunc(c.ctx, msg); err != nil {
+				c.logger.Println(err)
+			}
+			c.logger.Printf(
+				"Message %s in topic %s handled",
+				string(msg.Value), topic,
+			)
+		}
+	}()
+}
+
+func (c *KafkaConnector) AttachFetchHandler(
+	topic consts.TopicName,
+	handlerFunc KafkaFetchHandlerFunc,
+) {
+	reader := c.Readers[topic]
+
+	go func() {
+		for {
+			msg, err := reader.FetchMessage(c.ctx)
+			if err != nil {
+				c.logger.Println(err)
+				if errors.Is(err, context.Canceled) {
+					return
+				}
+				continue
+			}
+
+			err = handlerFunc(c.ctx, msg, func() error { return reader.CommitMessages(c.ctx, msg) })
+			if err != nil {
 				c.logger.Println(err)
 			}
 			c.logger.Printf(

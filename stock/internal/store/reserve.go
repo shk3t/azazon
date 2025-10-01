@@ -18,15 +18,14 @@ type PostgreReserveStore struct {
 func (s *PostgreReserveStore) Get(
 	ctx context.Context,
 	orderId int,
-	productId int,
-) (model.Reserve, error) {
-	reserve, err := query.GetReserveByOrderIdAndProductId(ctx, orderId, productId)
+) ([]model.Reserve, error) {
+	reserves, err := query.GetReservesByOrderId(ctx, orderId)
 
 	if errors.Is(err, pgx.ErrNoRows) {
-		return reserve, errpkg.NotFound
+		return reserves, errpkg.NotFound
 	}
 
-	return reserve, err
+	return reserves, err
 }
 
 func (s *PostgreReserveStore) GetOlder(
@@ -51,9 +50,17 @@ func (s *PostgreReserveStore) Create(ctx context.Context, tx pgx.Tx, reserve mod
 }
 
 func (s *PostgreReserveStore) Delete(ctx context.Context, tx pgx.Tx, reserve model.Reserve) error {
-	deleted, err := query.DeleteReserveByOrderIdAndProductId(
-		ctx, tx, reserve.OrderId, reserve.ProductId,
-	)
+	var deleted int
+	var err error
+
+	if reserve.ProductId != 0 {
+		deleted, err = query.DeleteReserveByOrderIdAndProductId(
+			ctx, tx, reserve.OrderId, reserve.ProductId,
+		)
+	} else {
+		deleted, err = query.DeleteReservesByOrderId(ctx, tx, reserve.OrderId)
+	}
+
 	if deleted == 0 {
 		return errpkg.NotFound
 	}

@@ -61,10 +61,11 @@ func (s *OrderServer) initGrpcClients() {
 }
 
 func (s *OrderServer) initKafka() {
-	readerHandlers := map[consts.TopicName]serverpkg.KafkaMessageHandlerFunc{
-		consts.Topics.OrderCancelling: s.CancelOrder,
+	fetchHandlers := map[consts.TopicName]serverpkg.KafkaFetchHandlerFunc{
+		consts.Topics.OrderCanceled:  s.CancelOrder,
+		consts.Topics.OrderConfirmed: s.ConfirmOrder,
 	}
-	readerTopics := helper.MapKeys(readerHandlers)
+	readerTopics := helper.MapKeys(fetchHandlers)
 	readerConfig := kafka.ReaderConfig{
 		Brokers:     config.Env.KafkaBrokerHosts,
 		GroupID:     "order_group",
@@ -77,12 +78,11 @@ func (s *OrderServer) initKafka() {
 	}
 	writerTopics := []consts.TopicName{
 		consts.Topics.OrderCreated,
-		consts.Topics.OrderCancelled,
 	}
 
 	s.kafkaConnector.ConnectAll(&readerTopics, &readerConfig, &writerTopics, &writerConfig)
-	for topic, handler := range readerHandlers {
-		s.kafkaConnector.AttachReaderHandler(topic, handler)
+	for topic, handler := range fetchHandlers {
+		s.kafkaConnector.AttachFetchHandler(topic, handler)
 	}
 }
 
@@ -139,6 +139,7 @@ func (s *OrderServer) CreateOrder(
 		return nil, err
 	}
 
+	// TODO: добавить Outbox
 	newOrder, err := s.service.SaveOrder(ctx, order)
 	if v, ok := err.(*grpcutil.ServiceError); ok && v != nil {
 		return nil, v.Grpc()
@@ -147,7 +148,7 @@ func (s *OrderServer) CreateOrder(
 	orderEvent := conv.OrderEvent(newOrder)
 	orderEvent.FullPrice = float64(fullPrice100.Load()) / 100
 	msg := s.marshaler.MarshalOrderEvent(orderEvent)
-	err = s.kafkaConnector.Writers[consts.Topics.OrderCreated].WriteMessages(ctx, msg)  // TODO: CUR | Чем плохо отсутствие идемпотентной публикации
+	err = s.kafkaConnector.Writers[consts.Topics.OrderCreated].WriteMessages(ctx, msg)
 	if err != nil {
 		return nil, err
 	}
@@ -166,10 +167,11 @@ func (s *OrderServer) GetOrderInfo(
 	return conv.GetOrderInfoResponse(order), nil
 }
 
-// TODO: use CommitMessage()
-func (s *OrderServer) CancelOrder(ctx context.Context, msg kafka.Message) error {
-	stockClient, _ := s.grpcConnector.GetStockClient()
-
+func (s *OrderServer) CancelOrder(
+	ctx context.Context,
+	msg kafka.Message,
+	commit serverpkg.KafkaHandlerCommit,
+) error {
 	orderEvent, err := s.marshaler.UnmarshalOrderEvent(msg)
 	if err != nil {
 		return err
@@ -180,36 +182,38 @@ func (s *OrderServer) CancelOrder(ctx context.Context, msg kafka.Message) error 
 		return err
 	}
 
-	trueValue := true
-	eg, egCtx := errgroup.WithContext(ctx)
-	for _, item := range order.Items {
-		eg.Go(
-			func() error {
-				_, err := stockClient.Reserve(egCtx, &stock.ReserveRequest{
-					ProductId: int64(item.ProductId),
-					Quantity:  int64(item.Quantity),
-					Undo:      &trueValue,
-				})
-				return err
-			},
-		)
-	}
-
-	if err := eg.Wait(); err != nil {
-		return err
-	}
-
-	order.Status = model.CancelledStatus
+	order.Status = model.CanceledStatus
 	_, err = s.service.SaveOrder(ctx, *order)
 	if v, ok := err.(*grpcutil.ServiceError); ok && v != nil {
 		return err
 	}
 
-	err = s.kafkaConnector.Writers[consts.Topics.OrderCancelled].WriteMessages(ctx, msg)
+	commit()
+	return nil
+}
+
+func (s *OrderServer) ConfirmOrder(
+	ctx context.Context,
+	msg kafka.Message,
+	commit serverpkg.KafkaHandlerCommit,
+) error {
+	orderEvent, err := s.marshaler.UnmarshalOrderEvent(msg)
 	if err != nil {
 		return err
 	}
 
+	order, err := s.service.GetOrderInfo(ctx, orderEvent.OrderId)
+	if v, ok := err.(*grpcutil.ServiceError); ok && v != nil {
+		return err
+	}
+
+	order.Status = model.ConfirmedStatus
+	_, err = s.service.SaveOrder(ctx, *order)
+	if v, ok := err.(*grpcutil.ServiceError); ok && v != nil {
+		return err
+	}
+
+	commit()
 	return nil
 }
 

@@ -17,8 +17,8 @@ message Item {
 enum OrderStatus {
     UNKNOWN = 0;
     CONFIRMED = 1;
-    CANCELLING = 2;
-    CANCELLED = 3;
+    CANCELING = 2;
+    CANCELED = 3;
 }
 
 message CreateOrderRequest {

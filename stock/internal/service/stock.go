@@ -37,7 +37,7 @@ type stockStore interface {
 }
 
 type reserveStore interface {
-	Get(ctx context.Context, orderId int, userId int) (model.Reserve, error)
+	Get(ctx context.Context, orderId int) ([]model.Reserve, error)
 	GetOlder(ctx context.Context, olderThan time.Time) ([]model.Reserve, error)
 	Create(ctx context.Context, tx pgx.Tx, reserve model.Reserve) error
 	Delete(ctx context.Context, tx pgx.Tx, reserve model.Reserve) error
@@ -170,18 +170,35 @@ func (s *StockService) Reserve(
 	return stock, nil
 }
 
-func (s *StockService) UndoOldReserves(
+func (s *StockService) DeleteReserves(
 	ctx context.Context,
-	olderThan time.Time,
+	orderId int,
 ) *grpcutil.ServiceError {
-	reserves, err := s.stores.reserve.GetOlder(ctx, olderThan)
+	err := s.stores.reserve.Delete(ctx, nil, model.Reserve{OrderId: orderId})
 	if err != nil {
 		return NewInternalErr(err)
 	}
-
-	for _, reserve := range reserves {
-		_ = s.stores.reserve.Delete(ctx, nil, reserve)
-	}
-
 	return nil
+}
+
+func (s *StockService) GetReserves(
+	ctx context.Context,
+	orderId int,
+) ([]model.Reserve, *grpcutil.ServiceError) {
+	reserves, err := s.stores.reserve.Get(ctx, orderId)
+	if err != nil {
+		return nil, NewInternalErr(err)
+	}
+	return reserves, nil
+}
+
+func (s *StockService) GetOldReserves(
+	ctx context.Context,
+	olderThan time.Time,
+) ([]model.Reserve, *grpcutil.ServiceError) {
+	reserves, err := s.stores.reserve.GetOlder(ctx, olderThan)
+	if err != nil {
+		return nil, NewInternalErr(err)
+	}
+	return reserves, nil
 }
