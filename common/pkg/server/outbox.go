@@ -4,6 +4,7 @@ import (
 	"common/pkg/consts"
 	"context"
 	"encoding/json"
+	"log"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -16,16 +17,21 @@ type TransactionalOutboxManager struct {
 	kafkaConnector *KafkaConnector
 	observer       chan struct{}
 	cancelCtx      context.CancelFunc
+	logger         *log.Logger
+	trackedTopics  map[consts.TopicName]struct{}
 }
 
 func NewTransactionalOutboxManager(
 	dbConnPool *pgxpool.Pool,
 	kafkaConnector *KafkaConnector,
+	logger *log.Logger,
 ) *TransactionalOutboxManager {
 	m := &TransactionalOutboxManager{
 		dbConnPool:     dbConnPool,
 		kafkaConnector: kafkaConnector,
 		observer:       make(chan struct{}, 1),
+		logger:         logger,
+		trackedTopics:  make(map[consts.TopicName]struct{}),
 	}
 
 	ticker := time.NewTicker(time.Minute)
@@ -35,9 +41,10 @@ func NewTransactionalOutboxManager(
 	go func() {
 		for {
 			select {
-			// db by timeout or queue
 			case <-m.observer:
+				m.processUnprocessed()
 			case <-ticker.C:
+				m.processUnprocessed()
 			case <-ctx.Done():
 				ticker.Stop()
 				return
@@ -57,53 +64,48 @@ func getTableName(topic consts.TopicName) string {
 func (m *TransactionalOutboxManager) processUnprocessed() {
 	ctx := context.Background()
 
-	topics := []consts.TopicName{}
-
-	for _, topic := range topics {
+	for topic := range m.trackedTopics {
 		table := getTableName(topic)
 		messages := []kafka.Message{}
+		msgIds := []int{}
 
-		tx, _ := m.dbConnPool.BeginTx(ctx, pgx.TxOptions{})
-		defer tx.Rollback(ctx)
-
-		// TODO: use transaction
 		rows, err := m.dbConnPool.Query(
 			ctx, `
-			SELECT msg
+			SELECT id, msg
 			FROM $1
 			WHERE processed = FALSE`,
 			table,
 		)
 		if err != nil {
-			tx.Rollback(ctx) // TODO: log all rollbacks
+			m.logger.Println(err)
 			continue
 		}
 
 		for rows.Next() {
-			var encodedMsg []byte
-			rows.Scan(&encodedMsg)
+			var id int
+			var encoded []byte
+			rows.Scan(&id, &encoded)
 
 			var msg kafka.Message
-			_ = json.Unmarshal(encodedMsg, &msg)
+			_ = json.Unmarshal(encoded, &msg)
 
 			messages = append(messages, msg)
+			msgIds = append(msgIds, id)
 		}
 
 		err = m.kafkaConnector.Writers[topic].WriteMessages(ctx, messages...)
 		if err != nil {
-			tx.Rollback(ctx) // TODO: log all rollbacks
+			m.logger.Println(err)
 			continue
 		}
 
-		tx.Exec(ctx, `
+		m.dbConnPool.Exec(ctx, `
 			UPDATE $1
-			SET processed = TRUE
+			SET processed = TRUE, msg = (E''),
 			WHERE id IN $2`,
-			table, // TODO: fetch ids
-		)		
-
-
-		tx.Commit(ctx)
+			table,
+			msgIds,
+		)
 	}
 
 }
@@ -114,9 +116,9 @@ func (m *TransactionalOutboxManager) Enqueue(
 	topic consts.TopicName,
 	msg kafka.Message,
 ) {
+	m.trackedTopics[topic] = struct{}{}
 	encodedMsg, _ := json.Marshal(msg)
 
-	// TODO: add to migrations
 	tx.Exec(
 		ctx, `
         INSERT INTO $1 (processed, msg)

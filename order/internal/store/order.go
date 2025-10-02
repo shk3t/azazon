@@ -25,10 +25,18 @@ func (s *PostgreOrderStore) Get(ctx context.Context, id int) (model.Order, error
 	return order, err
 }
 
-func (s *PostgreOrderStore) Save(ctx context.Context, order model.Order) (model.Order, error) {
+func (s *PostgreOrderStore) Save(
+	ctx context.Context,
+	tx pgx.Tx,
+	order model.Order,
+) (model.Order, error) {
 	var err error
 
-	tx, _ := db.ConnPool.BeginTx(ctx, pgx.TxOptions{})
+	txPassed := tx != nil
+	if !txPassed {
+		tx, _ = db.ConnPool.BeginTx(ctx, pgx.TxOptions{})
+	}
+
 	defer tx.Rollback(ctx)
 
 	if order.Id == 0 {
@@ -46,11 +54,12 @@ func (s *PostgreOrderStore) Save(ctx context.Context, order model.Order) (model.
 		query.DeleteOrderItems(ctx, tx, order.Id)
 		err = query.CreateOrderItems(ctx, tx, order.Id, order.Items)
 	}
-
 	if err != nil {
 		return order, err
 	}
 
-	err = tx.Commit(ctx)
+	if !txPassed {
+		err = tx.Commit(ctx)
+	}
 	return order, err
 }

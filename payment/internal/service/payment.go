@@ -2,10 +2,12 @@ package service
 
 import (
 	"common/pkg/grpcutil"
+	"common/pkg/model"
 	"context"
 	"errors"
-	"common/pkg/model"
 	"time"
+
+	"github.com/jackc/pgx/v5"
 )
 
 var NewErr = grpcutil.NewServiceError
@@ -19,6 +21,7 @@ func NewPaymentService() *PaymentService {
 
 func (s *PaymentService) StartPayment(
 	ctx context.Context,
+	tx pgx.Tx,
 	body model.OrderEvent,
 ) error {
 	balance := 10000.00

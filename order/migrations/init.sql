@@ -13,3 +13,9 @@ CREATE TABLE item (
     quantity INT NOT NULL,
     FOREIGN KEY (order_id) REFERENCES "order"(id) ON DELETE CASCADE
 );
+
+CREATE TABLE item (
+    id SERIAL PRIMARY KEY,
+    processed BOOL NOT NULL,
+    msg BYTEA NOT NULL,
+);

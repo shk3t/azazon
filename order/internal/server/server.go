@@ -15,11 +15,13 @@ import (
 	"net/http"
 	"order/internal/config"
 	conv "order/internal/conversion"
+	db "order/internal/database"
 	"order/internal/model"
 	"order/internal/service"
 	"sync/atomic"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/segmentio/kafka-go"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
@@ -35,6 +37,7 @@ type OrderServer struct {
 	marshaler      convpkg.KafkaMarshaler
 	grpcConnector  *serverpkg.GrpcConnector
 	kafkaConnector *serverpkg.KafkaConnector
+	outbox         *serverpkg.TransactionalOutboxManager
 }
 
 func NewOrderServer(opts grpc.ServerOption) *OrderServer {
@@ -50,6 +53,10 @@ func NewOrderServer(opts grpc.ServerOption) *OrderServer {
 
 	s.GrpcServer = grpc.NewServer(opts)
 	orderapi.RegisterOrderServiceServer(s.GrpcServer, s)
+
+	s.outbox = serverpkg.NewTransactionalOutboxManager(
+		db.ConnPool, s.kafkaConnector, log.Loggers.Event,
+	)
 
 	allServers = append(allServers, s)
 	return s
@@ -139,8 +146,10 @@ func (s *OrderServer) CreateOrder(
 		return nil, err
 	}
 
-	// TODO: добавить Outbox
-	newOrder, err := s.service.SaveOrder(ctx, order)
+	tx, _ := db.ConnPool.BeginTx(ctx, pgx.TxOptions{})
+	defer tx.Rollback(ctx)
+
+	newOrder, err := s.service.SaveOrder(ctx, tx, order)
 	if v, ok := err.(*grpcutil.ServiceError); ok && v != nil {
 		return nil, v.Grpc()
 	}
@@ -148,9 +157,9 @@ func (s *OrderServer) CreateOrder(
 	orderEvent := conv.OrderEvent(newOrder)
 	orderEvent.FullPrice = float64(fullPrice100.Load()) / 100
 	msg := s.marshaler.MarshalOrderEvent(orderEvent)
-	err = s.kafkaConnector.Writers[consts.Topics.OrderCreated].WriteMessages(ctx, msg)
-	if err != nil {
-		return nil, err
+	s.outbox.Enqueue(ctx, tx, consts.Topics.OrderCreated, msg)
+	if err = tx.Commit(ctx); err != nil {
+		return nil, NewInternalErr(err)
 	}
 
 	return &orderapi.CreateOrderResponse{OrderId: int64(order.Id)}, nil
@@ -183,7 +192,7 @@ func (s *OrderServer) CancelOrder(
 	}
 
 	order.Status = model.CanceledStatus
-	_, err = s.service.SaveOrder(ctx, *order)
+	_, err = s.service.SaveOrder(ctx, nil, *order)
 	if v, ok := err.(*grpcutil.ServiceError); ok && v != nil {
 		return err
 	}
@@ -208,7 +217,7 @@ func (s *OrderServer) ConfirmOrder(
 	}
 
 	order.Status = model.ConfirmedStatus
-	_, err = s.service.SaveOrder(ctx, *order)
+	_, err = s.service.SaveOrder(ctx, nil, *order)
 	if v, ok := err.(*grpcutil.ServiceError); ok && v != nil {
 		return err
 	}
@@ -221,6 +230,7 @@ var allServers []*OrderServer
 
 func Deinit() {
 	for _, s := range allServers {
+		s.outbox.Close()
 		s.grpcConnector.DisconnectAll()
 		s.kafkaConnector.DisconnectAll()
 		s.GrpcServer.GracefulStop()

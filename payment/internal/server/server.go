@@ -10,6 +10,8 @@ import (
 	"context"
 	"payment/internal/config"
 	"payment/internal/service"
+	"github.com/jackc/pgx/v5"
+	db "payment/internal/database"  // TODO: создать БД
 	"time"
 
 	"github.com/segmentio/kafka-go"
@@ -22,6 +24,7 @@ type PaymentServer struct {
 	service        *service.PaymentService
 	marshaler      convpkg.KafkaMarshaler
 	kafkaConnector *serverpkg.KafkaConnector
+	outbox         *serverpkg.TransactionalOutboxManager
 }
 
 func NewPaymentServer(opts grpc.ServerOption) *PaymentServer {
@@ -36,6 +39,10 @@ func NewPaymentServer(opts grpc.ServerOption) *PaymentServer {
 	s.GrpcServer = grpc.NewServer(opts)
 	payment.RegisterPaymentServiceServer(s.GrpcServer, s)
 
+	s.outbox = serverpkg.NewTransactionalOutboxManager(
+		db.ConnPool, s.kafkaConnector, log.Loggers.Event,
+	)
+
 	allServers = append(allServers, s)
 	return s
 }
@@ -46,9 +53,9 @@ func (s *PaymentServer) initKafka() {
 	}
 	readerTopics := helper.MapKeys(fetchHandlers)
 	readerConfig := kafka.ReaderConfig{
-		Brokers:          config.Env.KafkaBrokerHosts,
-		GroupID:          "payment_group",
-		StartOffset:      kafka.LastOffset,
+		Brokers:     config.Env.KafkaBrokerHosts,
+		GroupID:     "payment_group",
+		StartOffset: kafka.LastOffset,
 	}
 
 	writerConfig := kafka.WriterConfig{
@@ -79,20 +86,25 @@ func (s *PaymentServer) StartPayment(
 	if time.Since(msg.Time) > config.Env.PayTimeout {
 		newMsg := kafka.Message{Key: msg.Key, Value: msg.Value}
 		err = s.kafkaConnector.Writers[consts.Topics.OrderCanceled].WriteMessages(ctx, newMsg)
+		commit()
 		return err
 	}
 
-	err = s.service.StartPayment(ctx, *event)  // TODO: идемпотентно обрабатывать
+	tx, _ := db.ConnPool.BeginTx(ctx, pgx.TxOptions{})
 
-	commit()
+	err = s.service.StartPayment(ctx, tx, *event) // TODO: идемпотентно обрабатывать
 
-	// TODO: добавить Outbox
 	newMsg := kafka.Message{Key: msg.Key, Value: msg.Value}
 	if err == nil {
-		err = s.kafkaConnector.Writers[consts.Topics.OrderConfirmed].WriteMessages(ctx, newMsg)
+		s.outbox.Enqueue(ctx, tx, consts.Topics.OrderConfirmed, newMsg)
 	} else {
-		err = s.kafkaConnector.Writers[consts.Topics.OrderCanceled].WriteMessages(ctx, newMsg)
+		s.outbox.Enqueue(ctx, tx, consts.Topics.OrderCanceled, newMsg)
 	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return err
+	}
+	commit()
 
 	return err
 }
@@ -101,6 +113,7 @@ var allServers []*PaymentServer
 
 func Deinit() {
 	for _, s := range allServers {
+		s.outbox.Close()
 		s.kafkaConnector.DisconnectAll()
 		s.GrpcServer.GracefulStop()
 	}
