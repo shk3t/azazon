@@ -11,7 +11,7 @@ import (
 	"payment/internal/config"
 	"payment/internal/service"
 	"github.com/jackc/pgx/v5"
-	db "payment/internal/database"  // TODO: создать БД
+	db "payment/internal/database"
 	"time"
 
 	"github.com/segmentio/kafka-go"
@@ -92,7 +92,7 @@ func (s *PaymentServer) StartPayment(
 
 	tx, _ := db.ConnPool.BeginTx(ctx, pgx.TxOptions{})
 
-	err = s.service.StartPayment(ctx, tx, *event) // TODO: идемпотентно обрабатывать
+	err = s.service.StartPayment(ctx, tx, *event)
 
 	newMsg := kafka.Message{Key: msg.Key, Value: msg.Value}
 	if err == nil {

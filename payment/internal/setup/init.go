@@ -5,6 +5,7 @@ import (
 	setuppkg "common/pkg/setup"
 	"payment/internal/config"
 	"payment/internal/server"
+	"payment/internal/database"
 )
 
 func initAll(workDir string) error {
@@ -14,12 +15,16 @@ func initAll(workDir string) error {
 	if err := log.Init(workDir); err != nil {
 		return err
 	}
+	if err := database.ConnectDatabase(workDir); err != nil {
+		return err
+	}
 
 	return nil
 }
 
 func deinitAll() {
 	server.Deinit()
+	database.ConnPool.Close()
 	log.Deinit()
 }
 

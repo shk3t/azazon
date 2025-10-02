@@ -14,7 +14,7 @@ CREATE TABLE item (
     FOREIGN KEY (order_id) REFERENCES "order"(id) ON DELETE CASCADE
 );
 
-CREATE TABLE item (
+CREATE TABLE order_created_outbox (
     id SERIAL PRIMARY KEY,
     processed BOOL NOT NULL,
     msg BYTEA NOT NULL,
