@@ -27,7 +27,7 @@ type stores struct {
 
 type productStore interface {
 	Get(ctx context.Context, id int) (model.Product, error)
-	Save(ctx context.Context, product model.Product) (model.Product, error)
+	Save(ctx context.Context, tx pgx.Tx, product model.Product) (model.Product, error)
 	Delete(ctx context.Context, id int) error
 }
 
@@ -61,8 +61,22 @@ func (s *StockService) SaveProduct(
 	ctx context.Context,
 	body model.Product,
 ) (*model.Product, *grpcutil.ServiceError) {
-	product, err := s.stores.product.Save(ctx, body)
+	tx, _ := db.ConnPool.BeginTx(ctx, pgx.TxOptions{})
+	defer tx.Rollback(ctx)
+
+	product, err := s.stores.product.Save(ctx, tx, body)
 	if err != nil {
+		return nil, NewInternalErr(err)
+	}
+	_, err = s.stores.stock.Save(ctx, tx, model.Stock{
+		ProductId: product.Id,
+		Quantity:  0,
+	})
+	if err != nil {
+		return nil, NewInternalErr(err)
+	}
+
+	if err = tx.Commit(ctx); err != nil {
 		return nil, NewInternalErr(err)
 	}
 	return &product, nil
@@ -102,7 +116,7 @@ func (s *StockService) GetStockInfo(
 	ctx context.Context,
 	productId int,
 ) (*model.Stock, *grpcutil.ServiceError) {
-	stock, err := s.stores.stock.Get(ctx, productId)
+	stock, err := s.stores.stock.Get(ctx, productId)  // TODO
 	if err != nil {
 		if errors.Is(err, errpkg.NotFound) {
 			return nil, NewErr(http.StatusNotFound, "Product is not found")
@@ -162,7 +176,6 @@ func (s *StockService) Reserve(
 	if sErr != nil {
 		return nil, sErr
 	}
-
 
 	if err := tx.Commit(ctx); err != nil {
 		return nil, NewInternalErr(err)

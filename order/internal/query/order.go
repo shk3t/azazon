@@ -35,7 +35,7 @@ func CreateOrder(ctx context.Context, tx pgx.Tx, o model.Order) (int, error) {
 	return id, err
 }
 
-func UpdateOrder(ctx context.Context, tx pgx.Tx, id int, o model.Order) error {
+func UpdateOrder(ctx context.Context, tx pgx.Tx, o model.Order) error {
 	conn := helper.TxOrPool(tx, db.ConnPool)
 	_, err := conn.Exec(
 		ctx, `
@@ -43,7 +43,7 @@ func UpdateOrder(ctx context.Context, tx pgx.Tx, id int, o model.Order) error {
 		SET user_id = $1, status = $2, address = $3, track = $4
 		WHERE id = $5`,
 		o.UserId, o.Status, o.Address, o.Track,
-		id,
+		o.Id,
 	)
 	return err
 }

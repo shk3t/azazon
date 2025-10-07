@@ -3,6 +3,7 @@ package conversion
 import (
 	"auth/internal/model"
 	"common/api/auth"
+	"common/pkg/sugar"
 )
 
 func UserModel[R *auth.RegisterRequest | *auth.LoginRequest | *auth.UpdateUserRequest](
@@ -21,8 +22,8 @@ func UserModel[R *auth.RegisterRequest | *auth.LoginRequest | *auth.UpdateUserRe
 		}
 	case *auth.UpdateUserRequest:
 		return &model.User{
-			Login:    r.NewLogin,
-			Password: r.NewPassword,
+			Login:    sugar.Value(r.NewLogin),
+			Password: sugar.Value(r.NewPassword),
 		}
 	}
 	return nil

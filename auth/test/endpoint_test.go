@@ -24,7 +24,7 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-var connector *serverpkg.TestConnector
+var manager *serverpkg.TestManager
 
 func TestMain(m *testing.M) {
 	workDir := filepath.Dir(sugar.Default(os.Getwd()))
@@ -47,10 +47,9 @@ func TestMain(m *testing.M) {
 		os.Exit(1)
 	}
 
-	connector = serverpkg.NewTestConnector(logger)
-	connector.ConnectAll(
+	manager = serverpkg.NewTestManager(logger)
+	manager.ConnectGrpc(
 		map[consts.ServiceName]string{consts.Services.Auth: grpcUrl},
-		nil, nil, nil, nil,
 	)
 
 	logger.Println("Running tests...")
@@ -58,14 +57,14 @@ func TestMain(m *testing.M) {
 	logger.Println("Test run finished")
 
 	setuppkg.ServerDown(cmd, logger)
-	connector.DisconnectAll()
+	manager.Close()
 	setup.DeinitAll()
 	os.Exit(exitCode)
 }
 
 func TestRegister(t *testing.T) {
 	require := require.New(t)
-	client, err := connector.GetAuthClient()
+	client, err := manager.GetAuthClient()
 	require.NoError(err)
 
 	for _, testCase := range registerTestCases {
@@ -89,7 +88,7 @@ func TestRegister(t *testing.T) {
 
 func TestLogin(t *testing.T) {
 	require := require.New(t)
-	client, err := connector.GetAuthClient()
+	client, err := manager.GetAuthClient()
 	require.NoError(err)
 
 	for _, testCase := range loginTestCases {
@@ -108,7 +107,7 @@ func TestLogin(t *testing.T) {
 
 func TestValidateToken(t *testing.T) {
 	require := require.New(t)
-	client, err := connector.GetAuthClient()
+	client, err := manager.GetAuthClient()
 	require.NoError(err)
 
 	for _, testCase := range validateTokenTestCases {
@@ -130,7 +129,7 @@ func TestValidateToken(t *testing.T) {
 
 func TestUpdateUser(t *testing.T) {
 	require := require.New(t)
-	client, err := connector.GetAuthClient()
+	client, err := manager.GetAuthClient()
 	require.NoError(err)
 
 	for _, testCase := range updateUserTestCases {
@@ -141,8 +140,8 @@ func TestUpdateUser(t *testing.T) {
 
 		resp, err := client.UpdateUser(ctx, &auth.UpdateUserRequest{
 			Token:       respReg.Token,
-			NewLogin:    testCase.newUser.Login,
-			NewPassword: testCase.newUser.Password,
+			NewLogin:    &testCase.newUser.Login,
+			NewPassword: &testCase.newUser.Password,
 			RoleKey: sugar.If(
 				testCase.newUser.Role == model.UserRoles.Admin,
 				&config.Env.AdminKey,

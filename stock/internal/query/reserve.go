@@ -16,7 +16,7 @@ func GetReservesByOrderId(
 ) ([]model.Reserve, error) {
 	rows, _ := db.ConnPool.Query(
 		ctx, `
-		SELECT id, user_id, order_id, product_id, quantity
+		SELECT user_id, order_id, product_id, quantity
 		FROM reserve
 		WHERE order_id = $1`,
 		orderId,

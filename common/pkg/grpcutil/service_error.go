@@ -4,6 +4,7 @@ import (
 	"common/pkg/log"
 	"fmt"
 	"net/http"
+	"runtime/debug"
 
 	"google.golang.org/grpc/status"
 )
@@ -18,6 +19,8 @@ func NewServiceError(code int, msg string) *ServiceError {
 }
 
 func NewInternalError(err error) *ServiceError {
+	stackTrace := string(debug.Stack())
+	err = fmt.Errorf("%w\n%s", err, stackTrace)
 	log.Loggers.Debug.Println(err)
 	return &ServiceError{HttpCode: http.StatusInternalServerError, Message: ""}
 }

@@ -26,14 +26,15 @@ func (s *PostgreProductStore) Get(ctx context.Context, id int) (model.Product, e
 
 func (s *PostgreProductStore) Save(
 	ctx context.Context,
+	tx pgx.Tx,
 	product model.Product,
 ) (model.Product, error) {
 	var err error
 
 	if product.Id == 0 {
-		product.Id, err = query.CreateProduct(ctx, nil, product)
+		product.Id, err = query.CreateProduct(ctx, tx, product)
 	} else {
-		err = query.UpdateProduct(ctx, nil, product.Id, product)
+		err = query.UpdateProduct(ctx, tx, product)
 	}
 
 	return product, err

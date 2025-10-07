@@ -27,7 +27,9 @@ func (s *PostgreUserStore) Get(ctx context.Context, login string) (model.User, e
 func (s *PostgreUserStore) Save(ctx context.Context, user model.User) (model.User, error) {
 	var err error
 
-	user.PasswordHash, err = s.HashPassword(user.Password)
+	if user.PasswordHash == "" {
+		user.PasswordHash, err = s.HashPassword(user.Password)
+	}
 	if err != nil {
 		return user, err
 	}
@@ -35,7 +37,7 @@ func (s *PostgreUserStore) Save(ctx context.Context, user model.User) (model.Use
 	if user.Id == 0 {
 		user.Id, err = query.CreateUser(ctx, user)
 	} else {
-		err = query.UpdateUser(ctx, user.Id, user)
+		err = query.UpdateUser(ctx, user)
 	}
 
 	return user, err

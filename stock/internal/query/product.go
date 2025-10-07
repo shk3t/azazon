@@ -35,7 +35,7 @@ func CreateProduct(ctx context.Context, tx pgx.Tx, p model.Product) (int, error)
 	return id, err
 }
 
-func UpdateProduct(ctx context.Context, tx pgx.Tx, id int, p model.Product) error {
+func UpdateProduct(ctx context.Context, tx pgx.Tx, p model.Product) error {
 	conn := helper.TxOrPool(tx, db.ConnPool)
 	_, err := conn.Exec(
 		ctx, `
@@ -43,7 +43,7 @@ func UpdateProduct(ctx context.Context, tx pgx.Tx, id int, p model.Product) erro
 		SET name = $1, price = $2
 		WHERE id = $3`,
 		p.Name, p.Price,
-		id,
+		p.Id,
 	)
 	return err
 }

@@ -113,7 +113,7 @@ func (s *StockServer) SaveProduct(
 	}
 
 	product, err := s.service.SaveProduct(ctx, model.Product{
-		Id:    sugar.If(in.ProductId != nil, int(*in.ProductId), 0),
+		Id:    int(sugar.Value(in.ProductId)),
 		Name:  in.ProductName,
 		Price: in.ProductPrice,
 	})
@@ -131,7 +131,7 @@ func (s *StockServer) SaveProduct(
 	}, nil
 }
 
-func (s *StockServer) IncreaseStockQuantity(
+func (s *StockServer) ChangeStockQuantity(
 	ctx context.Context,
 	in *stockapi.ChangeStockQuantityRequest,
 ) (*stockapi.ChangeStockQuantityResponse, error) {
@@ -209,8 +209,8 @@ func (s *StockServer) DeleteConfirmedOrderReserves(
 	}
 
 	err = s.service.DeleteReserves(ctx, orderEvent.OrderId)
-	if err != nil {
-		return err
+	if v, ok := err.(*grpcutil.ServiceError); ok && v != nil {
+		return v
 	}
 
 	commit()
@@ -228,8 +228,8 @@ func (s *StockServer) UndoCanceledOrderReserves(
 	}
 
 	reserves, err := s.service.GetReserves(ctx, orderEvent.OrderId)
-	if err != nil {
-		return err
+	if v, ok := err.(*grpcutil.ServiceError); ok && v != nil {
+		return v
 	}
 
 	for _, reserve := range reserves {

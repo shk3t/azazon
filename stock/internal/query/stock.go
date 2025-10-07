@@ -12,7 +12,7 @@ import (
 func GetStockByProductId(ctx context.Context, productId int) (model.Stock, error) {
 	rows, _ := db.ConnPool.Query(
 		ctx, `
-		SELECT id, product_id, quantity
+		SELECT product_id, quantity
 		FROM stock
 		WHERE product_id = $1`,
 		productId,

@@ -47,7 +47,7 @@ func (s *PostgreOrderStore) Save(
 		err = query.CreateOrderItems(ctx, tx, order.Id, order.Items)
 
 	} else {
-		err = query.UpdateOrder(ctx, tx, order.Id, order)
+		err = query.UpdateOrder(ctx, tx, order)
 		if err != nil {
 			return order, err
 		}

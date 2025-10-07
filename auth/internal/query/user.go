@@ -32,14 +32,14 @@ func CreateUser(ctx context.Context, u model.User) (int, error) {
 	return id, err
 }
 
-func UpdateUser(ctx context.Context, id int, u model.User) error {
+func UpdateUser(ctx context.Context, u model.User) error {
 	_, err := db.ConnPool.Exec(
 		ctx, `
 		UPDATE "user"
 		SET login = $1, password_hash = $2, role = $3
 		WHERE id = $4`,
 		u.Login, u.PasswordHash, u.Role,
-		id,
+		u.Id,
 	)
 	return err
 }

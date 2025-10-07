@@ -31,8 +31,8 @@ message ValidateTokenResponse { bool valid = 1; }
 
 message UpdateUserRequest {
     string token = 1;
-    string new_login = 2;
-    string new_password = 3;
+    optional string new_login = 2;
+    optional string new_password = 3;
     optional string role_key = 4;
 }
 

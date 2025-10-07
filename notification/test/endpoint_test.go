@@ -2,7 +2,6 @@ package notificationtest
 
 import (
 	"common/pkg/consts"
-	conv "common/pkg/conversion"
 	"common/pkg/log"
 	serverpkg "common/pkg/server"
 	setuppkg "common/pkg/setup"
@@ -21,8 +20,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var connector *serverpkg.TestConnector
-var marshaler conv.KafkaMarshaler
+var manager *serverpkg.TestManager
 
 func TestMain(m *testing.M) {
 	workDir := filepath.Dir(sugar.Default(os.Getwd()))
@@ -45,34 +43,32 @@ func TestMain(m *testing.M) {
 		os.Exit(1)
 	}
 
-	connector = serverpkg.NewTestConnector(logger)
-	connector.ConnectAll(
-		nil,
+	manager = serverpkg.NewTestManager(logger)
+	manager.ConnectKafka(
 		nil, nil,
 		&[]consts.TopicName{consts.Topics.OrderCreated},
 		&kafka.WriterConfig{Brokers: config.Env.KafkaBrokerHosts},
 	)
-
-	marshaler = conv.NewKafkaMarshaler(config.Env.KafkaSerialization)
+	manager.InitMarshaler(config.Env.KafkaSerialization)
 
 	logger.Println("Running tests...")
 	exitCode := m.Run()
 	logger.Println("Test run finished")
 
 	setuppkg.ServerDown(cmd, logger)
-	connector.DisconnectAll()
+	manager.Close()
 	setup.DeinitAll()
 	os.Exit(exitCode)
 }
 
 func TestOrderCreated(t *testing.T) {
 	require := require.New(t)
-	createdWriter := connector.GetKafkaWriter(consts.Topics.OrderCreated)
+	createdWriter := manager.GetKafkaWriter(consts.Topics.OrderCreated)
 
 	for i, testCase := range orderCreatedTestCases {
 		ctx := context.Background()
 
-		kMsg := marshaler.MarshalOrderEvent(&testCase.event)
+		kMsg := manager.MarshalOrderEvent(&testCase.event)
 		err := createdWriter.WriteMessages(ctx, kMsg)
 		require.NoError(err)
 

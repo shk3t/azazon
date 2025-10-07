@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-topics=(order_created order_confirmed order_cancelling order_canceled)
+topics=(order_created order_confirmed order_canceled)
 
 for topic in ${topics[@]}; do
     kafka-topics.sh \

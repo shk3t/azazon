@@ -12,7 +12,7 @@ import (
 func GetItemsByOrderId(ctx context.Context, orderId int) ([]model.Item, error) {
 	rows, _ := db.ConnPool.Query(
 		ctx, `
-		SELECT id, product_id, quantity
+		SELECT product_id, quantity
 		FROM item
 		WHERE order_id = $1`,
 		orderId,

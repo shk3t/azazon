@@ -125,9 +125,11 @@ func (s *AuthService) UpdateUser(
 	}
 
 	updUser := model.User{
-		Login:    sugar.If(body.Login != "", body.Login, oldUser.Login),
-		Password: sugar.If(body.Password != "", body.Password, oldUser.Password),
-		Role:     sugar.If(roleKey == config.Env.AdminKey, model.UserRoles.Admin, oldUser.Role),
+		Id:           claims.UserId,
+		Login:        sugar.Or(body.Login, oldUser.Login),
+		Password:     body.Password,
+		PasswordHash: sugar.If(body.Password != "", "", oldUser.PasswordHash),
+		Role:         sugar.If(roleKey == config.Env.AdminKey, model.UserRoles.Admin, oldUser.Role),
 	}
 
 	updUser, err = s.store.Save(ctx, updUser)

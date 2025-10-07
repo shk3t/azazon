@@ -7,6 +7,7 @@ import (
 	"common/api/payment"
 	"common/api/stock"
 	"common/pkg/consts"
+	conv "common/pkg/conversion"
 	"context"
 	"log"
 	"time"
@@ -14,55 +15,52 @@ import (
 	"github.com/segmentio/kafka-go"
 )
 
-type TestConnector struct {
-	logger         *log.Logger
-	grpcConnector  *GrpcConnector
-	kafkaConnector *KafkaConnector
+type grpcConnector interface {
+	GetAuthClient() (client auth.AuthServiceClient, err error)
+	GetNotificationClient() (client notification.NotificationServiceClient, err error)
+	GetOrderClient() (client order.OrderServiceClient, err error)
+	GetPaymentClient() (client payment.PaymentServiceClient, err error)
+	GetStockClient() (client stock.StockServiceClient, err error)
 }
 
-func NewTestConnector(logger *log.Logger) *TestConnector {
-	return &TestConnector{
+type TestManager struct {
+	logger *log.Logger
+	grpcConnector
+	kafkaConnector *KafkaConnector
+	conv.KafkaMarshaler
+}
+
+func NewTestManager(logger *log.Logger) *TestManager {
+	return &TestManager{
 		logger: logger,
 	}
 }
 
-func (c *TestConnector) ConnectAll(
+func (c *TestManager) ConnectGrpc(
 	grpcUrls map[consts.ServiceName]string,
+) {
+	grpcConnector := NewGrpcConnector()
+	for serviceName, url := range grpcUrls {
+		grpcConnector.Connect(serviceName, url)
+	}
+	c.grpcConnector = grpcConnector
+}
+
+func (c *TestManager) ConnectKafka(
 	topicsToRead *[]consts.TopicName,
 	readerConfig *kafka.ReaderConfig,
 	topicsToWrite *[]consts.TopicName,
 	writerConfig *kafka.WriterConfig,
 ) {
-	c.grpcConnector = NewGrpcConnector()
-	for serviceName, url := range grpcUrls {
-		c.grpcConnector.Connect(serviceName, url)
-	}
-
 	c.kafkaConnector = NewKafkaConnector(c.logger)
 	c.kafkaConnector.ConnectAll(topicsToRead, readerConfig, topicsToWrite, writerConfig)
 }
 
-func (c *TestConnector) GetAuthClient() (client auth.AuthServiceClient, err error) {
-	return c.grpcConnector.GetAuthClient()
+func (c *TestManager) InitMarshaler(serializationMethod string) {
+	c.KafkaMarshaler = conv.NewKafkaMarshaler(serializationMethod)
 }
 
-func (c *TestConnector) GetNotificationClient() (client notification.NotificationServiceClient, err error) {
-	return c.grpcConnector.GetNotificationClient()
-}
-
-func (c *TestConnector) GetOrderClient() (client order.OrderServiceClient, err error) {
-	return c.grpcConnector.GetOrderClient()
-}
-
-func (c *TestConnector) GetPaymentClient() (client payment.PaymentServiceClient, err error) {
-	return c.grpcConnector.GetPaymentClient()
-}
-
-func (c *TestConnector) GetStockClient() (client stock.StockServiceClient, err error) {
-	return c.grpcConnector.GetStockClient()
-}
-
-func (c *TestConnector) GetKafkaReader(topic consts.TopicName, sink bool) *kafka.Reader {
+func (c *TestManager) GetKafkaReader(topic consts.TopicName, sink bool) *kafka.Reader {
 	reader := c.kafkaConnector.Readers[topic]
 
 	if sink {
@@ -78,11 +76,15 @@ func (c *TestConnector) GetKafkaReader(topic consts.TopicName, sink bool) *kafka
 	return reader
 }
 
-func (c *TestConnector) GetKafkaWriter(topic consts.TopicName) *kafka.Writer {
+func (c *TestManager) GetKafkaWriter(topic consts.TopicName) *kafka.Writer {
 	return c.kafkaConnector.Writers[topic]
 }
 
-func (c *TestConnector) DisconnectAll() {
-	c.grpcConnector.DisconnectAll()
-	c.kafkaConnector.DisconnectAll()
+func (c *TestManager) Close() {
+	if grpcConn, ok := c.grpcConnector.(*GrpcConnector); ok {
+		grpcConn.DisconnectAll()
+	}
+	if c.kafkaConnector != nil {
+		c.kafkaConnector.DisconnectAll()
+	}
 }
