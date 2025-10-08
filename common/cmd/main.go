@@ -18,4 +18,8 @@ func main() {
 	scripts.FillStocks()
 
 	scripts.MakeGoodOrder()
+
+	scripts.MakeBadOrderProductNotEnoughStocks()
+	scripts.MakeBadOrderProductDoesNotExist()
+	scripts.MakeBadOrderProductPaymentError()
 }

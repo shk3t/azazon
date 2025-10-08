@@ -133,7 +133,9 @@ func (m *TransactionalOutboxManager) Enqueue(
 		),
 		encodedMsg,
 	)
+}
 
+func (m *TransactionalOutboxManager) Notify() {
 	select {
 	case m.observer <- struct{}{}:
 	default:

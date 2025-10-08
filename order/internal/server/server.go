@@ -165,6 +165,7 @@ func (s *OrderServer) CreateOrder(
 	if err = tx.Commit(ctx); err != nil {
 		return nil, NewInternalErr(err)
 	}
+	s.outbox.Notify()
 
 	return &orderapi.CreateOrderResponse{OrderId: int64(order.Id)}, nil
 }

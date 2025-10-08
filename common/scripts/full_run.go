@@ -9,6 +9,7 @@ import (
 	logpkg "common/pkg/log"
 	serverpkg "common/pkg/server"
 	"context"
+	"fmt"
 )
 
 func newDefaultTestManager() *serverpkg.TestManager {
@@ -128,6 +129,86 @@ func MakeGoodOrder() {
 	}
 }
 
-// 1. When not enough stocks
-// 2. When product does not exist
-// 3. When payment error
+func MakeBadOrderProductNotEnoughStocks() {
+	ctx := context.Background()
+	manager := newDefaultTestManager()
+	defer manager.Close()
+
+	authClient, _ := manager.GetAuthClient()
+	orderClient, _ := manager.GetOrderClient()
+
+	loginCustomerResp, _ := authClient.Login(ctx, &auth.LoginRequest{
+		Login:    "customer",
+		Password: "customer123",
+	})
+	token := loginCustomerResp.Token
+
+	_, err := orderClient.CreateOrder(ctx, &order.CreateOrderRequest{
+		Token: token,
+		Items: []*order.Item{
+			&order.Item{ProductId: 1, Quantity: 3},
+			&order.Item{ProductId: 2, Quantity: 20},
+		},
+		Address: "Ultra street, 420 000 house",
+	})
+	if err == nil {
+		panic("It just works")
+	}
+	fmt.Println(err)
+}
+
+func MakeBadOrderProductDoesNotExist() {
+	ctx := context.Background()
+	manager := newDefaultTestManager()
+	defer manager.Close()
+
+	authClient, _ := manager.GetAuthClient()
+	orderClient, _ := manager.GetOrderClient()
+
+	loginCustomerResp, _ := authClient.Login(ctx, &auth.LoginRequest{
+		Login:    "customer",
+		Password: "customer123",
+	})
+	token := loginCustomerResp.Token
+
+	_, err := orderClient.CreateOrder(ctx, &order.CreateOrderRequest{
+		Token: token,
+		Items: []*order.Item{
+			&order.Item{ProductId: 1, Quantity: 3},
+			&order.Item{ProductId: 2, Quantity: 2},
+			&order.Item{ProductId: 3, Quantity: 1},
+		},
+		Address: "Wall street, 1337 house",
+	})
+	if err == nil {
+		panic("It just works")
+	}
+	fmt.Println(err)
+}
+
+func MakeBadOrderProductPaymentError() {
+	ctx := context.Background()
+	manager := newDefaultTestManager()
+	defer manager.Close()
+
+	authClient, _ := manager.GetAuthClient()
+	orderClient, _ := manager.GetOrderClient()
+
+	loginCustomerResp, _ := authClient.Login(ctx, &auth.LoginRequest{
+		Login:    "admin",
+		Password: "admin123",
+	})
+	token := loginCustomerResp.Token
+
+	_, err := orderClient.CreateOrder(ctx, &order.CreateOrderRequest{
+		Token: token,
+		Items: []*order.Item{
+			&order.Item{ProductId: 1, Quantity: 20},
+			&order.Item{ProductId: 2, Quantity: 5},
+		},
+		Address: "Rich street, X house",
+	})
+	if err != nil {
+		panic(err)
+	}
+}

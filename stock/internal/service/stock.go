@@ -167,6 +167,10 @@ func (s *StockService) Reserve(
 	} else {
 		err := s.stores.reserve.Create(ctx, tx, body)
 		if err != nil {
+			if errors.Is(err, store.ProductDoesNotExistError) {
+				err = fmt.Errorf("Can not create reservation: %w", err)
+				return nil, NewErr(http.StatusNotFound, err.Error())
+			}
 			return nil, NewInternalErr(err)
 		}
 	}

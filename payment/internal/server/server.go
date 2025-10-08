@@ -105,6 +105,7 @@ func (s *PaymentServer) StartPayment(
 		return err
 	}
 	commit()
+	s.outbox.Notify()
 
 	return err
 }

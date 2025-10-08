@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 )
 
 type PostgreReserveStore struct {
@@ -43,6 +44,14 @@ func (s *PostgreReserveStore) GetOlder(
 
 func (s *PostgreReserveStore) Create(ctx context.Context, tx pgx.Tx, reserve model.Reserve) error {
 	_, err := query.CreateReserve(ctx, tx, reserve)
+	if err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) {
+			if pgErr.Code == "23503" {
+				return ProductDoesNotExistError
+			}
+		}
+	}
 	return err
 }
 
