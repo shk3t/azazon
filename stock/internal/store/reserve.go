@@ -42,10 +42,7 @@ func (s *PostgreReserveStore) GetOlder(
 }
 
 func (s *PostgreReserveStore) Create(ctx context.Context, tx pgx.Tx, reserve model.Reserve) error {
-	id, err := query.CreateReserve(ctx, tx, reserve)
-	if id == 0 {
-		return errpkg.Duplicate
-	}
+	_, err := query.CreateReserve(ctx, tx, reserve)
 	return err
 }
 

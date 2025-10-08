@@ -8,6 +8,18 @@ return {
         program = "auth/cmd/main.go",
       },
       {
+        name = "Order",
+        type = "delve",
+        request = "launch",
+        program = "order/cmd/main.go",
+      },
+      {
+        name = "Stock",
+        type = "delve",
+        request = "launch",
+        program = "stock/cmd/main.go",
+      },
+      {
         name = "Test auth",
         type = "delve",
         request = "launch",

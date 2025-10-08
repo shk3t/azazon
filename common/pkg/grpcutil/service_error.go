@@ -2,10 +2,12 @@ package grpcutil
 
 import (
 	"common/pkg/log"
+	"errors"
 	"fmt"
 	"net/http"
 	"runtime/debug"
 
+	"github.com/jackc/pgx/v5/pgconn"
 	"google.golang.org/grpc/status"
 )
 
@@ -14,14 +16,25 @@ type ServiceError struct {
 	Message  string
 }
 
+func logWithStack(err error) {
+	var pgErr *pgconn.PgError
+	if errors.As(err, &pgErr) {
+		err = fmt.Errorf("%w (Message: %s, Code: %s, Detail: %s, Hint: %s, Position: %d)",
+			err, pgErr.Message, pgErr.Code, pgErr.Detail, pgErr.Hint, pgErr.Position,
+		)
+	}
+
+	stackTrace := string(debug.Stack())
+	err = fmt.Errorf("%w\n%s", err, stackTrace)
+	log.Loggers.Debug.Println(err)
+}
+
 func NewServiceError(code int, msg string) *ServiceError {
 	return &ServiceError{HttpCode: code, Message: msg}
 }
 
 func NewInternalError(err error) *ServiceError {
-	stackTrace := string(debug.Stack())
-	err = fmt.Errorf("%w\n%s", err, stackTrace)
-	log.Loggers.Debug.Println(err)
+	logWithStack(err)
 	return &ServiceError{HttpCode: http.StatusInternalServerError, Message: ""}
 }
 

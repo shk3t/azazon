@@ -14,7 +14,8 @@ func main() {
 		panic(err)
 	}
 
-	// scripts.CreateDefaultUsers()
-
+	scripts.CreateDefaultUsers()
 	scripts.FillStocks()
+
+	scripts.MakeGoodOrder()
 }

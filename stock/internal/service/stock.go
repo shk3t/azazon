@@ -116,7 +116,7 @@ func (s *StockService) GetStockInfo(
 	ctx context.Context,
 	productId int,
 ) (*model.Stock, *grpcutil.ServiceError) {
-	stock, err := s.stores.stock.Get(ctx, productId)  // TODO
+	stock, err := s.stores.stock.Get(ctx, productId)
 	if err != nil {
 		if errors.Is(err, errpkg.NotFound) {
 			return nil, NewErr(http.StatusNotFound, "Product is not found")
@@ -188,7 +188,7 @@ func (s *StockService) DeleteReserves(
 	orderId int,
 ) *grpcutil.ServiceError {
 	err := s.stores.reserve.Delete(ctx, nil, model.Reserve{OrderId: orderId})
-	if err != nil {
+	if err != nil && !errors.Is(err, errpkg.NotFound) {
 		return NewInternalErr(err)
 	}
 	return nil

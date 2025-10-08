@@ -2,6 +2,7 @@ package scripts
 
 import (
 	"common/api/auth"
+	"common/api/order"
 	"common/api/stock"
 	"common/internal/config"
 	"common/pkg/consts"
@@ -81,7 +82,7 @@ func FillStocks() {
 	saveBallResp, _ := stockClient.SaveProduct(ctx, &stock.SaveProductRequest{
 		Token:        adminToken,
 		ProductName:  "ball",
-		ProductPrice: 100.00,
+		ProductPrice: 1000.00,
 	})
 	stockClient.ChangeStockQuantity(ctx, &stock.ChangeStockQuantityRequest{
 		Token:         adminToken,
@@ -91,7 +92,7 @@ func FillStocks() {
 	saveLampResp, _ := stockClient.SaveProduct(ctx, &stock.SaveProductRequest{
 		Token:        adminToken,
 		ProductName:  "lamp",
-		ProductPrice: 300.00,
+		ProductPrice: 2000.00,
 	})
 	stockClient.ChangeStockQuantity(ctx, &stock.ChangeStockQuantityRequest{
 		Token:         adminToken,
@@ -99,3 +100,34 @@ func FillStocks() {
 		QuantityDelta: 10,
 	})
 }
+
+func MakeGoodOrder() {
+	ctx := context.Background()
+	manager := newDefaultTestManager()
+	defer manager.Close()
+
+	authClient, _ := manager.GetAuthClient()
+	orderClient, _ := manager.GetOrderClient()
+
+	loginCustomerResp, _ := authClient.Login(ctx, &auth.LoginRequest{
+		Login:    "customer",
+		Password: "customer123",
+	})
+	token := loginCustomerResp.Token
+
+	_, err := orderClient.CreateOrder(ctx, &order.CreateOrderRequest{
+		Token: token,
+		Items: []*order.Item{
+			&order.Item{ProductId: 1, Quantity: 3},
+			&order.Item{ProductId: 2, Quantity: 2},
+		},
+		Address: "Nice street, 420 house",
+	})
+	if err != nil {
+		panic(err)
+	}
+}
+
+// 1. When not enough stocks
+// 2. When product does not exist
+// 3. When payment error

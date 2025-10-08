@@ -110,7 +110,9 @@ func (s *OrderServer) CreateOrder(
 	claims, _ := servicepkg.ParseJwtToken(in.Token)
 
 	order := model.Order{
+		Id:      s.service.GetNextOrderId(ctx),
 		UserId:  claims.UserId,
+		Status:  model.CreatedStatus,
 		Address: in.Address,
 		Track:   uuid.New().String(),
 	}
@@ -128,6 +130,8 @@ func (s *OrderServer) CreateOrder(
 		eg.Go(
 			func() error {
 				resp, err := stockClient.Reserve(egCtx, &stock.ReserveRequest{
+					Token:     in.Token,
+					OrderId:   int64(order.Id),
 					ProductId: item.ProductId,
 					Quantity:  item.Quantity,
 				})
@@ -149,7 +153,7 @@ func (s *OrderServer) CreateOrder(
 	tx, _ := db.ConnPool.BeginTx(ctx, pgx.TxOptions{})
 	defer tx.Rollback(ctx)
 
-	newOrder, err := s.service.SaveOrder(ctx, tx, order)
+	newOrder, err := s.service.CreateOrder(ctx, tx, order)
 	if v, ok := err.(*grpcutil.ServiceError); ok && v != nil {
 		return nil, v.Grpc()
 	}
@@ -192,7 +196,7 @@ func (s *OrderServer) CancelOrder(
 	}
 
 	order.Status = model.CanceledStatus
-	_, err = s.service.SaveOrder(ctx, nil, *order)
+	_, err = s.service.UpdateOrder(ctx, nil, *order)
 	if v, ok := err.(*grpcutil.ServiceError); ok && v != nil {
 		return err
 	}
@@ -217,7 +221,7 @@ func (s *OrderServer) ConfirmOrder(
 	}
 
 	order.Status = model.ConfirmedStatus
-	_, err = s.service.SaveOrder(ctx, nil, *order)
+	_, err = s.service.UpdateOrder(ctx, nil, *order)
 	if v, ok := err.(*grpcutil.ServiceError); ok && v != nil {
 		return err
 	}

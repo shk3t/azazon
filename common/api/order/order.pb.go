@@ -25,8 +25,8 @@ type OrderStatus int32
 
 const (
 	OrderStatus_UNKNOWN   OrderStatus = 0
-	OrderStatus_CONFIRMED OrderStatus = 1
-	OrderStatus_CANCELING OrderStatus = 2
+	OrderStatus_CREATED   OrderStatus = 1
+	OrderStatus_CONFIRMED OrderStatus = 2
 	OrderStatus_CANCELED  OrderStatus = 3
 )
 
@@ -34,14 +34,14 @@ const (
 var (
 	OrderStatus_name = map[int32]string{
 		0: "UNKNOWN",
-		1: "CONFIRMED",
-		2: "CANCELING",
+		1: "CREATED",
+		2: "CONFIRMED",
 		3: "CANCELED",
 	}
 	OrderStatus_value = map[string]int32{
 		"UNKNOWN":   0,
-		"CONFIRMED": 1,
-		"CANCELING": 2,
+		"CREATED":   1,
+		"CONFIRMED": 2,
 		"CANCELED":  3,
 	}
 )
@@ -380,11 +380,11 @@ const file_order_proto_rawDesc = "" +
 	"\x05items\x18\x02 \x03(\v2\v.order.ItemR\x05items\x12*\n" +
 	"\x06status\x18\x03 \x01(\x0e2\x12.order.OrderStatusR\x06status\x12\x18\n" +
 	"\aaddress\x18\x04 \x01(\tR\aaddress\x12\x14\n" +
-	"\x05track\x18\x05 \x01(\tR\x05track*F\n" +
+	"\x05track\x18\x05 \x01(\tR\x05track*D\n" +
 	"\vOrderStatus\x12\v\n" +
-	"\aUNKNOWN\x10\x00\x12\r\n" +
-	"\tCONFIRMED\x10\x01\x12\r\n" +
-	"\tCANCELING\x10\x02\x12\f\n" +
+	"\aUNKNOWN\x10\x00\x12\v\n" +
+	"\aCREATED\x10\x01\x12\r\n" +
+	"\tCONFIRMED\x10\x02\x12\f\n" +
 	"\bCANCELED\x10\x032\x9d\x01\n" +
 	"\fOrderService\x12D\n" +
 	"\vCreateOrder\x12\x19.order.CreateOrderRequest\x1a\x1a.order.CreateOrderResponse\x12G\n" +

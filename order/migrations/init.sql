@@ -1,7 +1,7 @@
 CREATE TABLE "order" (
     id SERIAL PRIMARY KEY,
     user_id INT NOT NULL,
-    status VARCHAR(16) NOT NULL,
+    status INT NOT NULL,
     address VARCHAR(64) NOT NULL,
     track VARCHAR(64) NOT NULL
 );
@@ -17,5 +17,5 @@ CREATE TABLE item (
 CREATE TABLE order_created_outbox (
     id SERIAL PRIMARY KEY,
     processed BOOL NOT NULL,
-    msg BYTEA NOT NULL,
+    msg BYTEA NOT NULL
 );

@@ -4,6 +4,7 @@ import (
 	"common/pkg/consts"
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"time"
 
@@ -55,10 +56,10 @@ func NewTransactionalOutboxManager(
 	return m
 }
 
-const trablePostfix = "_outbox"
+const tablePostfix = "_outbox"
 
 func getTableName(topic consts.TopicName) string {
-	return string(topic) + trablePostfix
+	return string(topic) + tablePostfix
 }
 
 func (m *TransactionalOutboxManager) processUnprocessed() {
@@ -70,11 +71,13 @@ func (m *TransactionalOutboxManager) processUnprocessed() {
 		msgIds := []int{}
 
 		rows, err := m.dbConnPool.Query(
-			ctx, `
-			SELECT id, msg
-			FROM $1
-			WHERE processed = FALSE`,
-			table,
+			ctx,
+			fmt.Sprintf(`
+				SELECT id, msg
+				FROM %s
+				WHERE processed = FALSE`,
+				table,
+			),
 		)
 		if err != nil {
 			m.logger.Println(err)
@@ -99,11 +102,13 @@ func (m *TransactionalOutboxManager) processUnprocessed() {
 			continue
 		}
 
-		m.dbConnPool.Exec(ctx, `
-			UPDATE $1
-			SET processed = TRUE, msg = (E''),
-			WHERE id IN $2`,
-			table,
+		m.dbConnPool.Exec(ctx,
+			fmt.Sprintf(`
+				UPDATE %s
+				SET processed = TRUE, msg = (E'')
+				WHERE id = ANY ($1)`,
+				table,
+			),
 			msgIds,
 		)
 	}
@@ -120,11 +125,13 @@ func (m *TransactionalOutboxManager) Enqueue(
 	encodedMsg, _ := json.Marshal(msg)
 
 	tx.Exec(
-		ctx, `
-        INSERT INTO $1 (processed, msg)
-		VALUES ($2, $3)`,
-		getTableName(topic),
-		false, encodedMsg,
+		ctx,
+		fmt.Sprintf(`
+			INSERT INTO %s (processed, msg)
+			VALUES (FALSE, $1)`,
+			getTableName(topic),
+		),
+		encodedMsg,
 	)
 
 	select {

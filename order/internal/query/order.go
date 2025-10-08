@@ -9,6 +9,14 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
+func GetNextAvailableOrderId(ctx context.Context) int {
+	var nextId int
+	db.ConnPool.QueryRow(ctx,
+		`SELECT nextval(pg_get_serial_sequence('order', 'id'))`,
+	).Scan(&nextId)
+	return nextId
+}
+
 func GetOrderById(ctx context.Context, id int) (model.Order, error) {
 	rows, _ := db.ConnPool.Query(
 		ctx, `
@@ -24,14 +32,26 @@ func GetOrderById(ctx context.Context, id int) (model.Order, error) {
 func CreateOrder(ctx context.Context, tx pgx.Tx, o model.Order) (int, error) {
 	conn := helper.TxOrPool(tx, db.ConnPool)
 	var id int
+	var err error
 
-	err := conn.QueryRow(
-		ctx, `
-        INSERT INTO "order" (user_id, status, address, track)
-        VALUES ($1, $2, $3, $4)
-        RETURNING id`,
-		o.UserId, o.Status, o.Address, o.Track,
-	).Scan(&id)
+	if o.Id != 0 {
+		_, err = conn.Exec(
+			ctx, `
+			INSERT INTO "order" (id, user_id, status, address, track)
+			VALUES ($1, $2, $3, $4, $5)`,
+			o.Id, o.UserId, o.Status, o.Address, o.Track,
+		)
+		id = o.Id
+	} else {
+		err = conn.QueryRow(
+			ctx, `
+			INSERT INTO "order" (user_id, status, address, track)
+			VALUES ($1, $2, $3, $4)
+			RETURNING id`,
+			o.UserId, o.Status, o.Address, o.Track,
+		).Scan(&id)
+	}
+
 	return id, err
 }
 
