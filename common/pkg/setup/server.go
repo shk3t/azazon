@@ -39,7 +39,7 @@ func ServerUp(appName string, workDir string, url string, logger *log.Logger) (*
 	cmd = exec.CommandContext(
 		ctx,
 		"go", "build", "-o",
-		"build/"+appName,
+		"build/main",
 		"cmd/main.go",
 	)
 	cmd.Dir = workDir
@@ -52,7 +52,7 @@ func ServerUp(appName string, workDir string, url string, logger *log.Logger) (*
 
 	logger.Printf("Starting server in `%s` dir...\n", workDir)
 
-	cmd = exec.Command("./build/" + appName)
+	cmd = exec.Command("./build/main")
 	cmd.Dir = workDir
 	cmd.Stdout = logger.Writer()
 	cmd.Stderr = logger.Writer()

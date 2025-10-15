@@ -1,10 +1,10 @@
 go 1.25.1
 
 use (
-	./common
 	./auth
+	./common
 	./notification
-    ./order
-    ./payment
-    ./stock
+   	./order
+   	./payment
+   	./stock
 )
