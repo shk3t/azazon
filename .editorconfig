@@ -11,5 +11,5 @@ insert_final_newline = false
 [*.proto]
 indent_size = 4
 
-[*.lua]
+[{*.lua,*.yaml}]
 indent_size = 2

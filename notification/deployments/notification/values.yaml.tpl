@@ -1,0 +1,1 @@
+targetPort: ${NOTIFICATION_PORT}
