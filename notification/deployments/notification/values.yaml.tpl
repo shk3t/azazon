@@ -1,1 +1,3 @@
-targetPort: ${NOTIFICATION_PORT}
+app:
+  name: notification
+  port: ${NOTIFICATION_PORT}

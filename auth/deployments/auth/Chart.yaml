@@ -1,6 +1,6 @@
 apiVersion: v2
-name: notification
-description: Azazon notification service
+name: auth
+description: Azazon authorization service
 type: application
 version: 0.1.0
 appVersion: "1.0.0"

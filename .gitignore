@@ -8,6 +8,7 @@ todo.md
 # Private data
 .env
 env.*
+values.yaml
 
 # Python
 __pycache__/
