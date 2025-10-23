@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: {{ .Values.app.name }}-database-statefulset
+  namespace: azazon
 spec:
   selector:
     matchLabels:
@@ -18,8 +19,8 @@ spec:
         image: postgres:18
         args: ["-c", "config_file=/config/postgresql.conf"]
         ports:
-        - containerPort: {{ .Values.db.port }}
-          name: db
+        - name: {{ .Values.app.name }}-db-port
+          containerPort: {{ .Values.db.port }}
         env:
         - name: PGDATA
           value: "/data/pgdata"

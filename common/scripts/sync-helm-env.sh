@@ -4,14 +4,14 @@ set -a
 source .env
 set +a
 
-apps=(common auth notification order payment stock)
+apps=(auth notification order payment stock)
 
 for app in ${apps[@]}; do
-    APP_DIR="${app}/deployments/${app}"
-    if [[ -d ${APP_DIR} ]]; then
-        envsubst < ${APP_DIR}/values.yaml.tpl > ${APP_DIR}/values.yaml
+    app_dir="${app}/deployments/${app}"
+    if [[ -d ${app_dir} ]]; then
+        envsubst < ${app_dir}/values.yaml.tpl > ${app_dir}/values.yaml
     fi
-    if [[ -d ${APP_DIR}-db ]]; then
-        envsubst < ${APP_DIR}-db/values.yaml.tpl > ${APP_DIR}-db/values.yaml
+    if [[ -d ${app_dir}-db ]]; then
+        envsubst < ${app_dir}-db/values.yaml.tpl > ${app_dir}-db/values.yaml
     fi
 done

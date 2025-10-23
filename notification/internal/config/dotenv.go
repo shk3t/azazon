@@ -1,6 +1,7 @@
 package config
 
 import (
+	"common/pkg/helper"
 	"common/pkg/sugar"
 	"fmt"
 	"os"
@@ -20,7 +21,11 @@ func LoadEnv(workDir string) error {
 	}
 
 	Env = envFields{
-		Port:               sugar.Default(strconv.Atoi(getAppEnv("PORT"))),
+		Port: sugar.Default(strconv.Atoi(getAppEnv("PORT"))),
+		VirtualRuntime: sugar.Or(
+			helper.VirtualRuntime(os.Getenv("VIRTUAL_RUNTIME")),
+			"localhost",
+		),
 		TestPort:           sugar.Default(strconv.Atoi(getAppEnv("TEST_PORT"))),
 		Test:               sugar.Default(strconv.ParseBool(getAppEnv("TEST"))),
 		KafkaBrokerHosts:   []string{"localhost:" + os.Getenv("KAFKA_PORT")},
@@ -34,6 +39,7 @@ const AppName = "NOTIFICATION"
 
 type envFields struct {
 	Port               int
+	VirtualRuntime     helper.VirtualRuntime
 	TestPort           int
 	Test               bool
 	KafkaBrokerHosts   []string

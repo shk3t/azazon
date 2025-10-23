@@ -1,6 +1,7 @@
 package config
 
 import (
+	"common/pkg/helper"
 	"common/pkg/sugar"
 	"fmt"
 	"os"
@@ -20,13 +21,13 @@ func LoadEnv(workDir string) error {
 	}
 
 	Env = envFields{
-		Port:     sugar.Default(strconv.Atoi(getAppEnv("PORT"))),
-		TestPort: sugar.Default(strconv.Atoi(getAppEnv("TEST_PORT"))),
-		Test:     sugar.Default(strconv.ParseBool(getAppEnv("TEST"))),
+		Port:           sugar.Default(strconv.Atoi(getAppEnv("PORT"))),
+		VirtualRuntime: sugar.Or(helper.VirtualRuntime(os.Getenv("VIRTUAL_RUNTIME")), "localhost"),
+		TestPort:       sugar.Default(strconv.Atoi(getAppEnv("TEST_PORT"))),
+		Test:           sugar.Default(strconv.ParseBool(getAppEnv("TEST"))),
 		Db: dbConfig{
 			User:        getAppEnv("DB_USER"),
 			Password:    getAppEnv("DB_PASSWORD"),
-			Host:        getAppEnv("DB_HOST"),
 			Port:        sugar.Default(strconv.Atoi(getAppEnv("DB_PORT"))),
 			Name:        getAppEnv("DB_NAME"),
 			SchemaReset: sugar.Default(strconv.ParseBool(getAppEnv("DB_SCHEMA_RESET"))),
@@ -50,6 +51,7 @@ const AppName = "ORDER"
 
 type envFields struct {
 	Port               int
+	VirtualRuntime     helper.VirtualRuntime
 	TestPort           int
 	Test               bool
 	Db                 dbConfig
@@ -61,7 +63,6 @@ type envFields struct {
 type dbConfig struct {
 	User        string
 	Password    string
-	Host        string
 	Port        int
 	Name        string
 	SchemaReset bool

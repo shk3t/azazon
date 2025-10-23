@@ -1,6 +1,8 @@
 package config
 
 import (
+	"common/pkg/helper"
+	"common/pkg/sugar"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -17,14 +19,15 @@ func LoadEnv(workDir string) error {
 	}
 
 	Env = envFields{
+		VirtualRuntime: sugar.Or(helper.VirtualRuntime(os.Getenv("VIRTUAL_RUNTIME")), "localhost"),
 		GrpcUrls: grpcClientUrls{
-			Auth:         "localhost:" + os.Getenv("AUTH_PORT"),
-			Order:        "localhost:" + os.Getenv("ORDER_PORT"),
-			Stock:        "localhost:" + os.Getenv("STOCK_PORT"),
+			Auth:  "localhost:" + os.Getenv("AUTH_PORT"),
+			Order: "localhost:" + os.Getenv("ORDER_PORT"),
+			Stock: "localhost:" + os.Getenv("STOCK_PORT"),
 		},
 		KafkaBrokerHosts:   []string{"localhost:" + os.Getenv("KAFKA_PORT")},
 		KafkaSerialization: os.Getenv("KAFKA_SERIALIZATION"),
-		AdminKey: os.Getenv("AUTH_ADMIN_KEY"),
+		AdminKey:           os.Getenv("AUTH_ADMIN_KEY"),
 	}
 
 	return nil
@@ -33,14 +36,15 @@ func LoadEnv(workDir string) error {
 const AppName = "STOCK"
 
 type envFields struct {
+	VirtualRuntime     helper.VirtualRuntime
 	GrpcUrls           grpcClientUrls
 	KafkaBrokerHosts   []string
 	KafkaSerialization string
-	AdminKey  string
+	AdminKey           string
 }
 
 type grpcClientUrls struct {
-	Auth         string
-	Order        string
-	Stock        string
+	Auth  string
+	Order string
+	Stock string
 }

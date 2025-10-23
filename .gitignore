@@ -9,6 +9,7 @@ todo.md
 .env
 env.*
 values.yaml
+cert/
 
 # Python
 __pycache__/

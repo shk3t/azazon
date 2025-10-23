@@ -1,0 +1,22 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: grpc-gateway
+  namespace: azazon
+spec:
+  gatewayClassName: istio
+  listeners:
+  - name: grpc-tls
+    port: 8443
+    protocol: HTTPS
+    hostname: "grpc.example.com"
+    tls:
+      mode: Terminate
+      certificateRefs:
+      - name: temp-tls-secret
+    allowedRoutes:
+      namespaces:
+        from: Selector
+        selector:
+          matchLabels:
+            kubernetes.io/metadata.name: default
