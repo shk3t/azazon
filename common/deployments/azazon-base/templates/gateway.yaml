@@ -9,14 +9,14 @@ spec:
   gatewayClassName: istio
   listeners:
   - name: main
-    port: 8443
-    protocol: HTTPS
-    hostname: "azazon.com"
-    tls:
-      mode: Terminate
-      certificateRefs:
-      - name: temp-tls-secret
-        namespace: security
+    port: 80
+    protocol: HTTP
+    hostname: {{ .Values.hostname }}
+    # tls:
+    #   mode: Terminate
+    #   certificateRefs:
+    #   - name: temp-tls-secret
+    #     namespace: security
     allowedRoutes:
       namespaces:
         from: Selector

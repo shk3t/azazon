@@ -15,11 +15,11 @@ func main() {
 	}
 
 	scripts.CreateDefaultUsers()
-	scripts.FillStocks()
-
-	scripts.MakeGoodOrder()
-
-	scripts.MakeBadOrderProductNotEnoughStocks()
-	scripts.MakeBadOrderProductDoesNotExist()
-	scripts.MakeBadOrderProductPaymentError()
+	// scripts.FillStocks()
+	//
+	// scripts.MakeGoodOrder()
+	//
+	// scripts.MakeBadOrderProductNotEnoughStocks()
+	// scripts.MakeBadOrderProductDoesNotExist()
+	// scripts.MakeBadOrderProductPaymentError()
 }

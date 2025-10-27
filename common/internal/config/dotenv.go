@@ -18,16 +18,31 @@ func LoadEnv(workDir string) error {
 		return fmt.Errorf("Error loading .env file:\n\t%w", err)
 	}
 
+	externalClusterIp := os.Getenv("EXTERNAL_CLUSTER_IP")
+	externalClusterPort := os.Getenv("EXTERNAL_CLUSTER_PORT")
+
 	Env = envFields{
-		VirtualRuntime: sugar.Or(helper.VirtualRuntime(os.Getenv("VIRTUAL_RUNTIME")), "localhost"),
-		GrpcUrls: grpcClientUrls{
-			Auth:  "localhost:" + os.Getenv("AUTH_PORT"),
-			Order: "localhost:" + os.Getenv("ORDER_PORT"),
-			Stock: "localhost:" + os.Getenv("STOCK_PORT"),
-		},
+		HostName: os.Getenv("HOST_NAME"),
+		VirtualRuntime: sugar.If(
+			externalClusterIp != "",
+			helper.VirtualRuntimes.Kubernetes,
+			helper.VirtualRuntimes.Localhost,
+		),
 		KafkaBrokerHosts:   []string{"localhost:" + os.Getenv("KAFKA_PORT")},
 		KafkaSerialization: os.Getenv("KAFKA_SERIALIZATION"),
 		AdminKey:           os.Getenv("AUTH_ADMIN_KEY"),
+	}
+
+	switch Env.VirtualRuntime {
+	case helper.VirtualRuntimes.Localhost:
+		Env.GrpcUrls = grpcClientUrls{
+			Auth:  "localhost:" + os.Getenv("AUTH_PORT"),
+			Order: "localhost:" + os.Getenv("ORDER_PORT"),
+			Stock: "localhost:" + os.Getenv("STOCK_PORT"),
+		}
+	case helper.VirtualRuntimes.Kubernetes:
+		url := externalClusterIp + sugar.If(externalClusterPort != "", ":"+externalClusterPort, "")
+		Env.GrpcUrls = grpcClientUrls{Auth: url, Order: url, Stock: url}
 	}
 
 	return nil
@@ -36,6 +51,7 @@ func LoadEnv(workDir string) error {
 const AppName = "STOCK"
 
 type envFields struct {
+	HostName           string
 	VirtualRuntime     helper.VirtualRuntime
 	GrpcUrls           grpcClientUrls
 	KafkaBrokerHosts   []string

@@ -6,6 +6,9 @@ set +a
 
 apps=(auth notification order payment stock)
 
+envsubst < common/deployments/azazon-base/values.yaml.tpl > \
+    common/deployments/azazon-base/values.yaml
+
 for app in ${apps[@]}; do
     app_dir="${app}/deployments/${app}"
     if [[ -d ${app_dir} ]]; then
@@ -15,3 +18,4 @@ for app in ${apps[@]}; do
         envsubst < ${app_dir}-db/values.yaml.tpl > ${app_dir}-db/values.yaml
     fi
 done
+

@@ -6,6 +6,7 @@ import (
 	"common/api/stock"
 	"common/internal/config"
 	"common/pkg/consts"
+	"common/pkg/helper"
 	logpkg "common/pkg/log"
 	serverpkg "common/pkg/server"
 	"context"
@@ -14,26 +15,18 @@ import (
 
 func newDefaultTestManager() *serverpkg.TestManager {
 	manager := serverpkg.NewTestManager(logpkg.Loggers.Test)
+
+	if config.Env.VirtualRuntime == helper.VirtualRuntimes.Kubernetes {
+		if err := manager.UseAsIngress(config.Env.HostName, "cert/tls.crt"); err != nil {
+			panic(err)
+		}
+	}
 	manager.ConnectGrpc(map[consts.ServiceName]string{
 		consts.Services.Auth:  config.Env.GrpcUrls.Auth,
 		consts.Services.Order: config.Env.GrpcUrls.Order,
 		consts.Services.Stock: config.Env.GrpcUrls.Stock,
 	})
-	// allTopics := []consts.TopicName{
-	// 	consts.Topics.OrderCreated,
-	// 	consts.Topics.OrderConfirmed,
-	// 	consts.Topics.OrderCanceled,
-	// }
-	// manager.ConnectKafka(
-	// 	&allTopics,
-	// 	&kafka.ReaderConfig{
-	// 		Brokers:     config.Env.KafkaBrokerHosts,
-	// 		GroupID:     "script_group",
-	// 		StartOffset: kafka.LastOffset,
-	// 	},
-	// 	&allTopics,
-	// 	&kafka.WriterConfig{Brokers: config.Env.KafkaBrokerHosts},
-	// )
+
 	manager.InitMarshaler(config.Env.KafkaSerialization)
 
 	return manager

@@ -2,7 +2,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: {{ .Values.app.name }}-database-config
-  namespace: azazon
+  namespace: {{ .Release.Namespace }}
 data:
   POSTGRES_DB: {{ .Values.db.name }}
   POSTGRES_USER: {{ .Values.db.user }}

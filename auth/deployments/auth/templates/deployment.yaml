@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ .Values.app.name }}-deployment
-  namespace: azazon
+  namespace: {{ .Release.Namespace }}
 spec:
   replicas: 1
   selector:
@@ -17,9 +17,6 @@ spec:
       - name: {{ .Values.app.name }}
         image: {{ .Values.app.name }}-app:latest
         imagePullPolicy: Never
-        env:
-        - name: VIRTUAL_RUNTIME
-          value: "kubernetes"
         ports:
         - name: {{ .Values.app.name }}-port
           containerPort: {{ .Values.app.port }}

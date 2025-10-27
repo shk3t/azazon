@@ -16,6 +16,7 @@ import (
 )
 
 type grpcConnector interface {
+	UseAsIngress(authority string, tlsCertPath string) error
 	GetAuthClient() (client auth.AuthServiceClient, err error)
 	GetNotificationClient() (client notification.NotificationServiceClient, err error)
 	GetOrderClient() (client order.OrderServiceClient, err error)
@@ -32,18 +33,17 @@ type TestManager struct {
 
 func NewTestManager(logger *log.Logger) *TestManager {
 	return &TestManager{
-		logger: logger,
+		logger:        logger,
+		grpcConnector: NewGrpcConnector(),
 	}
 }
 
 func (c *TestManager) ConnectGrpc(
 	grpcUrls map[consts.ServiceName]string,
 ) {
-	grpcConnector := NewGrpcConnector()
 	for serviceName, url := range grpcUrls {
-		grpcConnector.Connect(serviceName, url)
+		c.grpcConnector.(*GrpcConnector).Connect(serviceName, url)
 	}
-	c.grpcConnector = grpcConnector
 }
 
 func (c *TestManager) ConnectKafka(

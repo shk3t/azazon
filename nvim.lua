@@ -2,6 +2,12 @@ return {
   debug = {
     go = {
       {
+        name = "Common",
+        type = "delve",
+        request = "launch",
+        program = "common/cmd/main.go",
+      },
+      {
         name = "Auth",
         type = "delve",
         request = "launch",

@@ -21,10 +21,14 @@ func LoadEnv(workDir string) error {
 	}
 
 	Env = envFields{
-		Port:           sugar.Default(strconv.Atoi(getAppEnv("PORT"))),
-		VirtualRuntime: sugar.Or(helper.VirtualRuntime(os.Getenv("VIRTUAL_RUNTIME")), "localhost"),
-		TestPort:       sugar.Default(strconv.Atoi(getAppEnv("TEST_PORT"))),
-		Test:           sugar.Default(strconv.ParseBool(getAppEnv("TEST"))),
+		Port: sugar.Default(strconv.Atoi(getAppEnv("PORT"))),
+		VirtualRuntime: sugar.If(
+			os.Getenv("EXTERNAL_CLUSTER_IP") != "",
+			helper.VirtualRuntimes.Kubernetes,
+			helper.VirtualRuntimes.Localhost,
+		),
+		TestPort: sugar.Default(strconv.Atoi(getAppEnv("TEST_PORT"))),
+		Test:     sugar.Default(strconv.ParseBool(getAppEnv("TEST"))),
 		Db: dbConfig{
 			User:        getAppEnv("DB_USER"),
 			Password:    getAppEnv("DB_PASSWORD"),

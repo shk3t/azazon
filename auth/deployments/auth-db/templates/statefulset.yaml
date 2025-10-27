@@ -2,12 +2,12 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: {{ .Values.app.name }}-database-statefulset
-  namespace: azazon
+  namespace: {{ .Release.Namespace }}
 spec:
   selector:
     matchLabels:
       app: {{ .Values.app.name }}-db
-  serviceName: "{{ .Values.app.name }}-database-service"
+  serviceName: {{ .Values.app.name }}-database-service
   replicas: 1
   template:
     metadata:

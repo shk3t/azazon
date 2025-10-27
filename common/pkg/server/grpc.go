@@ -8,10 +8,14 @@ import (
 	"common/api/stock"
 	"common/pkg/consts"
 	"common/pkg/helper"
+	"crypto/tls"
+	"crypto/x509"
 	"fmt"
+	"os"
 	"sync"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 )
 
@@ -28,18 +32,58 @@ type grpcClients struct {
 type GrpcConnector struct {
 	clients    grpcClients
 	closeFuncs []closeConnectionFunc
+	dialOpts   []grpc.DialOption
 }
 
 func NewGrpcConnector() *GrpcConnector {
-	return &GrpcConnector{}
+	return &GrpcConnector{
+		dialOpts: []grpc.DialOption{
+			grpc.WithTransportCredentials(insecure.NewCredentials()),
+		},
+	}
+}
+
+func (c *GrpcConnector) UseAsIngress(authority string, tlsCertPath string) error {
+	creds, err := getTransportCredentials(authority, tlsCertPath)
+	if err != nil {
+		return err
+	}
+	creds = insecure.NewCredentials() // TODO
+	c.dialOpts = []grpc.DialOption{
+		grpc.WithAuthority(authority),
+		grpc.WithTransportCredentials(creds),
+	}
+	return nil
+}
+
+func getTransportCredentials(
+	serverName string,
+	certPath string,
+) (credentials.TransportCredentials, error) {
+	var tc credentials.TransportCredentials
+
+	caCert, err := os.ReadFile(certPath)
+	if err != nil {
+		return tc, fmt.Errorf("could not read CA certificate: %v", err)
+	}
+
+	certPool := x509.NewCertPool()
+	if !certPool.AppendCertsFromPEM(caCert) {
+		return tc, fmt.Errorf("failed to add CA certificate to pool")
+	}
+
+	return credentials.NewTLS(
+		&tls.Config{
+			RootCAs:    certPool,
+			ServerName: serverName,
+		},
+	), nil
 }
 
 func (c *GrpcConnector) Connect(serviceName consts.ServiceName, url string) error {
 	switch serviceName {
 	case consts.Services.Auth:
-		conn, err := grpc.NewClient(
-			url, grpc.WithTransportCredentials(insecure.NewCredentials()),
-		)
+		conn, err := grpc.NewClient(url, c.dialOpts...)
 		if err != nil {
 			return err
 		}
@@ -48,9 +92,7 @@ func (c *GrpcConnector) Connect(serviceName consts.ServiceName, url string) erro
 		c.closeFuncs = append(c.closeFuncs, conn.Close)
 
 	case consts.Services.Notification:
-		conn, err := grpc.NewClient(
-			url, grpc.WithTransportCredentials(insecure.NewCredentials()),
-		)
+		conn, err := grpc.NewClient(url, c.dialOpts...)
 		if err != nil {
 			return err
 		}
@@ -59,9 +101,7 @@ func (c *GrpcConnector) Connect(serviceName consts.ServiceName, url string) erro
 		c.closeFuncs = append(c.closeFuncs, conn.Close)
 
 	case consts.Services.Order:
-		conn, err := grpc.NewClient(
-			url, grpc.WithTransportCredentials(insecure.NewCredentials()),
-		)
+		conn, err := grpc.NewClient(url, c.dialOpts...)
 		if err != nil {
 			return err
 		}
@@ -70,9 +110,7 @@ func (c *GrpcConnector) Connect(serviceName consts.ServiceName, url string) erro
 		c.closeFuncs = append(c.closeFuncs, conn.Close)
 
 	case consts.Services.Payment:
-		conn, err := grpc.NewClient(
-			url, grpc.WithTransportCredentials(insecure.NewCredentials()),
-		)
+		conn, err := grpc.NewClient(url, c.dialOpts...)
 		if err != nil {
 			return err
 		}
@@ -81,9 +119,7 @@ func (c *GrpcConnector) Connect(serviceName consts.ServiceName, url string) erro
 		c.closeFuncs = append(c.closeFuncs, conn.Close)
 
 	case consts.Services.Stock:
-		conn, err := grpc.NewClient(
-			url, grpc.WithTransportCredentials(insecure.NewCredentials()),
-		)
+		conn, err := grpc.NewClient(url, c.dialOpts...)
 		if err != nil {
 			return err
 		}
