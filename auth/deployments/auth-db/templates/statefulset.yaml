@@ -26,18 +26,18 @@ spec:
           value: "/data/pgdata"
         - name: POSTGRES_DB
           valueFrom:
-            configMapKeyRef:
-              name: {{ .Values.app.name }}-database-config
+            secretKeyRef:
+              name: {{ .Values.app.name }}-database-secret
               key: POSTGRES_DB
         - name: POSTGRES_USER
           valueFrom:
-            configMapKeyRef:
-              name: {{ .Values.app.name }}-database-config
+            secretKeyRef:
+              name: {{ .Values.app.name }}-database-secret
               key: POSTGRES_USER
         - name: POSTGRES_PASSWORD
           valueFrom:
-            configMapKeyRef:
-              name: {{ .Values.app.name }}-database-config
+            secretKeyRef:
+              name: {{ .Values.app.name }}-database-secret
               key: POSTGRES_PASSWORD
         volumeMounts:
         - name: config
@@ -57,7 +57,8 @@ spec:
   - metadata:
       name: data
     spec:
-      accessModes: [ "ReadWriteOnce" ]
+      accessModes:
+        - ReadWriteOnce
       storageClassName: "standard"
       resources:
         requests:

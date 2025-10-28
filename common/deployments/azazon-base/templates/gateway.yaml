@@ -12,11 +12,6 @@ spec:
     port: 80
     protocol: HTTP
     hostname: {{ .Values.hostname }}
-    # tls:
-    #   mode: Terminate
-    #   certificateRefs:
-    #   - name: temp-tls-secret
-    #     namespace: security
     allowedRoutes:
       namespaces:
         from: Selector

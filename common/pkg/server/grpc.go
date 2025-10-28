@@ -44,14 +44,9 @@ func NewGrpcConnector() *GrpcConnector {
 }
 
 func (c *GrpcConnector) UseAsIngress(authority string, tlsCertPath string) error {
-	creds, err := getTransportCredentials(authority, tlsCertPath)
-	if err != nil {
-		return err
-	}
-	creds = insecure.NewCredentials() // TODO
 	c.dialOpts = []grpc.DialOption{
 		grpc.WithAuthority(authority),
-		grpc.WithTransportCredentials(creds),
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	}
 	return nil
 }
