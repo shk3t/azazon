@@ -17,7 +17,7 @@ func newDefaultTestManager() *serverpkg.TestManager {
 	manager := serverpkg.NewTestManager(logpkg.Loggers.Test)
 
 	if config.Env.VirtualRuntime == helper.VirtualRuntimes.Kubernetes {
-		if err := manager.UseAsIngress(config.Env.HostName, "cert/tls.crt"); err != nil {
+		if err := manager.UseAsIngress(config.Env.Domain, "cert/tls.crt"); err != nil {
 			panic(err)
 		}
 	}

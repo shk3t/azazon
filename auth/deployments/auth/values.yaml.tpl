@@ -1,4 +1,4 @@
-hostname: ${HOST_NAME}
+domain: ${DOMAIN}
 
 app:
   name: auth

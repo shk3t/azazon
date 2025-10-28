@@ -6,3 +6,6 @@ db:
   user: ${AUTH_DB_USER}
   password: ${AUTH_DB_PASSWORD}
   port: ${AUTH_DB_PORT}
+  replica:
+    user: ${AUTH_DB_REPLICA_USER}
+    password: ${AUTH_DB_REPLICA_PASSWORD}

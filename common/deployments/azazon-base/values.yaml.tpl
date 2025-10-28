@@ -1,1 +1,1 @@
-hostname: ${HOST_NAME}
+domain: ${DOMAIN}

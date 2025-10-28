@@ -22,7 +22,7 @@ func LoadEnv(workDir string) error {
 	externalClusterPort := os.Getenv("EXTERNAL_CLUSTER_PORT")
 
 	Env = envFields{
-		HostName: os.Getenv("HOST_NAME"),
+		Domain: os.Getenv("DOMAIN"),
 		VirtualRuntime: sugar.If(
 			externalClusterIp != "",
 			helper.VirtualRuntimes.Kubernetes,
@@ -51,7 +51,7 @@ func LoadEnv(workDir string) error {
 const AppName = "STOCK"
 
 type envFields struct {
-	HostName           string
+	Domain             string
 	VirtualRuntime     helper.VirtualRuntime
 	GrpcUrls           grpcClientUrls
 	KafkaBrokerHosts   []string

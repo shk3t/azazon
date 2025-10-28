@@ -11,7 +11,7 @@ spec:
   - name: main
     port: 80
     protocol: HTTP
-    hostname: {{ .Values.hostname }}
+    hostname: {{ .Values.domain }}
     allowedRoutes:
       namespaces:
         from: Selector
