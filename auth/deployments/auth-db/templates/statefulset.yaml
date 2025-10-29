@@ -8,7 +8,7 @@ spec:
     matchLabels:
       app: {{ .Values.app.name }}-db
   serviceName: {{ .Values.app.name }}-database-service
-  replicas: 1
+  replicas: 3
   template:
     metadata:
       labels:
@@ -17,18 +17,20 @@ spec:
       initContainers:
       - name: postgres-init
         image: postgres:18
-        command: [ "bash", "/config/setup.sh" ]
+        command: [ "bash", "/config-init/setup.sh" ]
         env:
-        - name: POSTGRES_REPLICA_USER
+        - name: PGDATA
+          value: "/data/pgdata"
+        - name: REPLICA_USER
           valueFrom:
             secretKeyRef:
               name: {{ .Values.app.name }}-database-secret
-              key: POSTGRES_REPLICA_USER
-        - name: POSTGRES_REPLICA_PASSWORD
+              key: REPLICA_USER
+        - name: REPLICA_PASSWORD
           valueFrom:
             secretKeyRef:
               name: {{ .Values.app.name }}-database-secret
-              key: POSTGRES_REPLICA_PASSWORD
+              key: REPLICA_PASSWORD
         volumeMounts:
         - name: config-init
           mountPath: /config-init
@@ -63,16 +65,16 @@ spec:
             secretKeyRef:
               name: {{ .Values.app.name }}-database-secret
               key: POSTGRES_PASSWORD
-        - name: POSTGRES_REPLICA_USER
+        - name: REPLICA_USER
           valueFrom:
             secretKeyRef:
               name: {{ .Values.app.name }}-database-secret
-              key: POSTGRES_REPLICA_USER
-        - name: POSTGRES_REPLICA_PASSWORD
+              key: REPLICA_USER
+        - name: REPLICA_PASSWORD
           valueFrom:
             secretKeyRef:
               name: {{ .Values.app.name }}-database-secret
-              key: POSTGRES_REPLICA_PASSWORD
+              key: REPLICA_PASSWORD
         volumeMounts:
         - name: config-init
           mountPath: /config-init

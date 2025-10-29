@@ -12,6 +12,10 @@ data:
     port = {{ .Values.db.port }}
     listen_addresses = '*'
 
+    wal_level = replica
+    max_wal_senders = 10
+    max_replication_slots = 10
+
     archive_mode = on
     archive_command = 'test ! -f /data/archive/%f && cp %p /data/archive/%f'
 
@@ -26,6 +30,7 @@ data:
   pg_hba.conf: |
     # TYPE  DATABASE        USER            ADDRESS                 METHOD
     host    all             all             10.244.0.0/16           md5
+    host    replication     shket2          10.244.0.0/16           md5
     # "local" is for Unix domain socket connections only
     local   all             all                                     trust
     # IPv4 local connections:
@@ -46,10 +51,20 @@ data:
 
         mkdir -p /data/archive
         chown -R postgres:postgres /data/archive
+
+        echo "CREATE USER ${REPLICA_USER} REPLICATION LOGIN ENCRYPTED PASSWORD '${REPLICA_PASSWORD}';" > \
+            /docker-entrypoint-initdb.d/init.sql
     else
         cp /config/postgresql_slave.conf /config/postgresql.conf
-    fi
 
-    echo "CREATE USER ${POSTGRES_REPLICA_USER} REPLICATION LOGIN ENCRYPTED PASSWORD '${POSTGRES_REPLICA_PASSWORD}';" > \
-        /docker-entrypoint-initdb.d/init.sql
+        if [[ ! -d "${PGDATA}" ]]; then
+            mkdir -p $PGDATA
+            chmod 700 $PGDATA
+            chown postgres:root $PGDATA
+        fi
+        if [[ -z "$(ls -A ${PGDATA})" ]]; then
+            export PGPASSWORD=${REPLICA_PASSWORD}
+            pg_basebackup -h "{{ .Values.app.name }}-database-statefulset-0.{{ .Values.app.name }}-database-service" -U ${REPLICA_USER} -D ${PGDATA} -Fp -Xs -R
+        fi
+    fi
 
