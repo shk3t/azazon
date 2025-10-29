@@ -1,52 +1,3 @@
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: {{ .Values.app.name }}-database-config
-  namespace: {{ .Release.Namespace }}
-data:
-  postgresql_master.conf: |
-    data_directory = '/data/pgdata'
-    hba_file = '/config/pg_hba.conf'
-    ident_file = '/config/pg_ident.conf'
-
-    port = {{ .Values.db.port }}
-    listen_addresses = '*'
-
-    archive_mode = on
-    archive_command = 'test ! -f /mnt/server/archive/%f && cp %p /mnt/server/archive/%f'
-
-  postgresql_slave.conf: |
-    data_directory = '/data/pgdata'
-    hba_file = '/config/pg_hba.conf'
-    ident_file = '/config/pg_ident.conf'
-
-    port = {{ .Values.db.port }}
-    listen_addresses = '*'
-
-  pg_hba.conf: |
-    # TYPE  DATABASE        USER            ADDRESS                 METHOD
-    host    all             all             10.244.0.0/16           md5
-    # "local" is for Unix domain socket connections only
-    local   all             all                                     trust
-    # IPv4 local connections:
-    host    all             all             127.0.0.1/32            trust
-    # IPv6 local connections:
-    host    all             all             ::1/128                 trust
-    # Allow replication connections from localhost, by a user with the
-    # replication privilege.
-    local   replication     all                                     trust
-    host    replication     all             127.0.0.1/32            trust
-    host    replication     all             ::1/128                 trust
-
-  setup.sh: |
-    if [[ $HOSTNAME == *database*-0 ]]; then
-        cp /config/postgresql_master.conf /config/postgresql.conf
-    else
-        cp /config/postgresql_slave.conf /config/postgresql.conf
-    fi
-
----
-
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -64,12 +15,29 @@ spec:
         app: {{ .Values.app.name }}-db
     spec:
       initContainers:
-      - name: init-postgres
+      - name: postgres-init
         image: postgres:18
         command: [ "bash", "/config/setup.sh" ]
+        env:
+        - name: POSTGRES_REPLICA_USER
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.app.name }}-database-secret
+              key: POSTGRES_REPLICA_USER
+        - name: POSTGRES_REPLICA_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.app.name }}-database-secret
+              key: POSTGRES_REPLICA_PASSWORD
         volumeMounts:
+        - name: config-init
+          mountPath: /config-init
         - name: config
           mountPath: /config
+        - name: initdb
+          mountPath: /docker-entrypoint-initdb.d
+        - name: data
+          mountPath: /data
       containers:
       - name: postgres
         image: postgres:18
@@ -106,13 +74,17 @@ spec:
               name: {{ .Values.app.name }}-database-secret
               key: POSTGRES_REPLICA_PASSWORD
         volumeMounts:
+        - name: config-init
+          mountPath: /config-init
         - name: config
           mountPath: /config
+        - name: initdb
+          mountPath: /docker-entrypoint-initdb.d
         - name: data
           mountPath: /data
           readOnly: false
       volumes:
-      - name: config
+      - name: config-init
         configMap:
           name: {{ .Values.app.name }}-database-config
           items:
@@ -124,7 +96,18 @@ spec:
             path: "pg_hba.conf"
           - key: "setup.sh"
             path: "setup.sh"
+      - name: initdb
+        emptyDir: {}
   volumeClaimTemplates:
+  - metadata:
+      name: config
+    spec:
+      accessModes:
+        - ReadWriteOnce
+      storageClassName: "standard"
+      resources:
+        requests:
+          storage: 10Mi
   - metadata:
       name: data
     spec:
@@ -133,4 +116,4 @@ spec:
       storageClassName: "standard"
       resources:
         requests:
-          storage: 100Mi
+          storage: 200Mi
