@@ -1,6 +1,7 @@
 package database
 
 import (
+	"common/pkg/helper"
 	"context"
 	"fmt"
 	"payment/internal/config"
@@ -17,7 +18,7 @@ func ConnectDatabase(workDir string) error {
 	dbUrl := fmt.Sprintf(
 		"postgres://%s:%s@%s:%d/%s",
 		db.User, db.Password,
-		config.Env.VirtualRuntime.GetDbHost(config.AppName),
+		config.Env.VirtualRuntime.GetDbHosts(config.AppName, helper.OpModes.Write),
 		db.Port, db.Name,
 	)
 

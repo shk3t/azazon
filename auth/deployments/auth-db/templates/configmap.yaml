@@ -12,6 +12,11 @@ data:
     port = {{ .Values.db.port }}
     listen_addresses = '*'
 
+    log_connections = on
+    log_disconnections = on
+    log_line_prefix = '%m [%p] %q%u@%d %h '
+    log_statement = 'all'
+
     wal_level = replica
     max_wal_senders = 10
     max_replication_slots = 10
@@ -24,13 +29,18 @@ data:
     hba_file = '/config/pg_hba.conf'
     ident_file = '/config/pg_ident.conf'
 
+    log_connections = on
+    log_disconnections = on
+    log_line_prefix = '%m [%p] %q%u@%d %h '
+    log_statement = 'all'
+
     port = {{ .Values.db.port }}
     listen_addresses = '*'
 
   pg_hba.conf: |
     # TYPE  DATABASE        USER            ADDRESS                 METHOD
     host    all             all             10.244.0.0/16           md5
-    host    replication     shket2          10.244.0.0/16           md5
+    host    replication     all             10.244.0.0/16           md5
     # "local" is for Unix domain socket connections only
     local   all             all                                     trust
     # IPv4 local connections:

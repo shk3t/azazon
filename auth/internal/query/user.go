@@ -9,7 +9,7 @@ import (
 )
 
 func GetUserByLogin(ctx context.Context, login string) (model.User, error) {
-	rows, _ := db.ConnPool.Query(
+	rows, _ := db.Pooler.Reader().Query(
 		ctx, `
 		SELECT id, login, password_hash, role
 		FROM "user"
@@ -22,7 +22,7 @@ func GetUserByLogin(ctx context.Context, login string) (model.User, error) {
 
 func CreateUser(ctx context.Context, u model.User) (int, error) {
 	var id int
-	err := db.ConnPool.QueryRow(
+	err := db.Pooler.Writer().QueryRow(
 		ctx, `
         INSERT INTO "user" (login, password_hash, role)
         VALUES ($1, $2, $3)
@@ -33,7 +33,7 @@ func CreateUser(ctx context.Context, u model.User) (int, error) {
 }
 
 func UpdateUser(ctx context.Context, u model.User) error {
-	_, err := db.ConnPool.Exec(
+	_, err := db.Pooler.Writer().Exec(
 		ctx, `
 		UPDATE "user"
 		SET login = $1, password_hash = $2, role = $3
@@ -45,7 +45,7 @@ func UpdateUser(ctx context.Context, u model.User) error {
 }
 
 func DeleteUser(ctx context.Context, id int) {
-	db.ConnPool.Exec(
+	db.Pooler.Writer().Exec(
 		ctx,
 		`DELETE FROM "user" WHERE id = $1`,
 		id,

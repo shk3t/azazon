@@ -1,31 +1,17 @@
 package database
 
 import (
-	"auth/internal/config"
 	"context"
-	"fmt"
-
-	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-var ConnPool *pgxpool.Pool
+var Pooler *dbPooler
 
 func ConnectDatabase(workDir string) error {
-	ctx := context.Background()
-	db := config.Env.Db
-
-	dbUrl := fmt.Sprintf(
-		"postgres://%s:%s@%s:%d/%s",
-		db.User, db.Password,
-		config.Env.VirtualRuntime.GetDbHost(config.AppName),
-		db.Port, db.Name,
-	)
-
 	var err error
-	ConnPool, err = pgxpool.New(ctx, dbUrl)
+	ctx := context.Background()
+	Pooler, err = NewDbPooler(ctx)
 	if err != nil {
 		return err
 	}
-
 	return InitDatabaseSchema(ctx, workDir)
 }

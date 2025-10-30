@@ -1,9 +1,10 @@
 package database
 
 import (
-	"stock/internal/config"
+	"common/pkg/helper"
 	"context"
 	"fmt"
+	"stock/internal/config"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -17,7 +18,7 @@ func ConnectDatabase(workDir string) error {
 	dbUrl := fmt.Sprintf(
 		"postgres://%s:%s@%s:%d/%s",
 		db.User, db.Password,
-		config.Env.VirtualRuntime.GetDbHost(config.AppName),
+		config.Env.VirtualRuntime.GetDbHosts(config.AppName, helper.OpModes.Write),
 		db.Port, db.Name,
 	)
 

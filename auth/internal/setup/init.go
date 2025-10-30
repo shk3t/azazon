@@ -24,7 +24,7 @@ func initAll(workDir string) error {
 
 func deinitAll() {
 	server.Deinit()
-	database.ConnPool.Close()
+	database.Pooler.Close()
 	log.Deinit()
 }
 
