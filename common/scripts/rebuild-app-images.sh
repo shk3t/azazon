@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-apps=(auth notification order payment stock)
+source $(dirname $0)/envs.sh
 
 eval $(minikube -p minikube docker-env)
 

@@ -39,11 +39,14 @@ func CreateDefaultUsers() {
 
 	authClient, _ := manager.GetAuthClient()
 
-	regAdminResp, _ := authClient.Register(ctx, &auth.RegisterRequest{
+	regAdminResp, err := authClient.Register(ctx, &auth.RegisterRequest{
 		Login:    "admin",
 		Password: "admin123",
 	})
-	_, err := authClient.Register(ctx, &auth.RegisterRequest{
+	if err != nil {
+		panic(err)
+	}
+	_, err = authClient.Register(ctx, &auth.RegisterRequest{
 		Login:    "customer",
 		Password: "customer123",
 	})
@@ -67,27 +70,37 @@ func FillStocks() {
 	authClient, _ := manager.GetAuthClient()
 	stockClient, _ := manager.GetStockClient()
 
-	loginAdminResp, _ := authClient.Login(ctx, &auth.LoginRequest{
+	loginAdminResp, err := authClient.Login(ctx, &auth.LoginRequest{
 		Login:    "admin",
 		Password: "admin123",
 	})
+
+	if err != nil {
+		panic(err)
+	}
 	adminToken := loginAdminResp.Token
 
-	saveBallResp, _ := stockClient.SaveProduct(ctx, &stock.SaveProductRequest{
+	saveBallResp, err := stockClient.SaveProduct(ctx, &stock.SaveProductRequest{
 		Token:        adminToken,
 		ProductName:  "ball",
 		ProductPrice: 1000.00,
 	})
+	if err != nil {
+		panic(err)
+	}
 	stockClient.ChangeStockQuantity(ctx, &stock.ChangeStockQuantityRequest{
 		Token:         adminToken,
 		ProductId:     saveBallResp.Stock.Product.Id,
 		QuantityDelta: 50,
 	})
-	saveLampResp, _ := stockClient.SaveProduct(ctx, &stock.SaveProductRequest{
+	saveLampResp, err := stockClient.SaveProduct(ctx, &stock.SaveProductRequest{
 		Token:        adminToken,
 		ProductName:  "lamp",
 		ProductPrice: 2000.00,
 	})
+	if err != nil {
+		panic(err)
+	}
 	stockClient.ChangeStockQuantity(ctx, &stock.ChangeStockQuantityRequest{
 		Token:         adminToken,
 		ProductId:     saveLampResp.Stock.Product.Id,

@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.app.name }}-deployment
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Values.app.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.app.name }}
+    spec:
+      containers:
+      - name: {{ .Values.app.name }}
+        image: {{ .Values.app.name }}-app:latest
+        imagePullPolicy: Never
+        ports:
+        - name: {{ .Values.app.name }}-port
+          containerPort: {{ .Values.app.port }}
+          protocol: TCP
+        volumeMounts:
+          - name: {{ .Values.app.name }}-log-volume
+            mountPath: "{{ .Values.app.name }}-app/{{ .Values.app.name }}/logs"
+      volumes:
+      - name: {{ .Values.app.name }}-log-volume
+        persistentVolumeClaim:
+          claimName: {{ .Values.app.name }}-log-pvc

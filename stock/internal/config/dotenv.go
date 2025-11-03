@@ -21,15 +21,17 @@ func LoadEnv(workDir string) error {
 		return fmt.Errorf("Error loading .env file:\n\t%w", err)
 	}
 
+	virtualRuntime := sugar.If(
+		os.Getenv("VIRTUAL_RUNTIME") == string(helper.VirtualRuntimes.Kubernetes),
+		helper.VirtualRuntimes.Kubernetes,
+		helper.VirtualRuntimes.Localhost,
+	)
+
 	Env = envFields{
-		Port: sugar.Default(strconv.Atoi(getAppEnv("PORT"))),
-		VirtualRuntime: sugar.If(
-			os.Getenv("EXTERNAL_CLUSTER_IP") != "",
-			helper.VirtualRuntimes.Kubernetes,
-			helper.VirtualRuntimes.Localhost,
-		),
-		TestPort: sugar.Default(strconv.Atoi(getAppEnv("TEST_PORT"))),
-		Test:     sugar.Default(strconv.ParseBool(getAppEnv("TEST"))),
+		Port:           sugar.Default(strconv.Atoi(getAppEnv("PORT"))),
+		VirtualRuntime: virtualRuntime,
+		TestPort:       sugar.Default(strconv.Atoi(getAppEnv("TEST_PORT"))),
+		Test:           sugar.Default(strconv.ParseBool(getAppEnv("TEST"))),
 		Db: dbConfig{
 			User:        getAppEnv("DB_USER"),
 			Password:    getAppEnv("DB_PASSWORD"),
@@ -41,9 +43,9 @@ func LoadEnv(workDir string) error {
 			sugar.Default(strconv.Atoi(getAppEnv("RESERVE_TIMEOUT"))),
 		),
 		GrpcUrls: grpcClientUrls{
-			Auth: "localhost:" + os.Getenv("AUTH_PORT"),
+			Auth: virtualRuntime.GetGrpcServerHost("AUTH"),
 		},
-		KafkaBrokerHosts:   []string{"localhost:" + os.Getenv("KAFKA_PORT")},
+		KafkaBrokerHosts:   virtualRuntime.GetKafkaHosts(),
 		KafkaSerialization: os.Getenv("KAFKA_SERIALIZATION"),
 	}
 

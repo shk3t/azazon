@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 
+source $(dirname $0)/envs.sh
+
 set -a
 source .env
 set +a
-
-apps=(auth notification order payment stock)
 
 envsubst < common/deployments/azazon-base/values.yaml.tpl > \
     common/deployments/azazon-base/values.yaml

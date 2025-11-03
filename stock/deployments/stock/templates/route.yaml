@@ -1,0 +1,28 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: GRPCRoute
+metadata:
+  name: {{ .Values.app.name }}-route
+  namespace: {{ .Release.Namespace }}
+spec:
+  parentRefs:
+  - name: main-gateway
+    namespace: istio-ingress
+  hostnames:
+  - {{ .Values.domain }}
+  rules:
+  - matches:
+    - method:
+        service: {{ .Values.app.name }}.StockService
+        method: SaveProduct
+    - method:
+        service: {{ .Values.app.name }}.StockService
+        method: ChangeStockQuantity
+    - method:
+        service: {{ .Values.app.name }}.StockService
+        method: GetStockInfo
+    - method:
+        service: {{ .Values.app.name }}.StockService
+        method: DeleteProduct
+    backendRefs:
+    - name: {{ .Values.app.name }}-service
+      port: 80

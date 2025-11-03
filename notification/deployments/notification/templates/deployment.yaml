@@ -21,3 +21,10 @@ spec:
         - name: {{ .Values.app.name  | trunc 10 }}-port
           containerPort: {{ .Values.app.port }}
           protocol: TCP
+        volumeMounts:
+          - name: {{ .Values.app.name }}-log-volume
+            mountPath: "{{ .Values.app.name }}-app/{{ .Values.app.name }}/logs"
+      volumes:
+      - name: {{ .Values.app.name }}-log-volume
+        persistentVolumeClaim:
+          claimName: {{ .Values.app.name }}-log-pvc

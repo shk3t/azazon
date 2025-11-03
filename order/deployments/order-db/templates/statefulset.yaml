@@ -1,0 +1,66 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .Values.app.name }}-database-statefulset
+  namespace: {{ .Release.Namespace }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ .Values.app.name }}-db
+  serviceName: {{ .Values.app.name }}-database-service
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.app.name }}-db
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:18
+        args: ["-c", "config_file=/config/postgresql.conf"]
+        ports:
+        - name: {{ .Values.app.name }}-db-port
+          containerPort: {{ .Values.db.port }}
+        env:
+        - name: PGDATA
+          value: "/data/pgdata"
+        - name: POSTGRES_DB
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.app.name }}-database-secret
+              key: POSTGRES_DB
+        - name: POSTGRES_USER
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.app.name }}-database-secret
+              key: POSTGRES_USER
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.app.name }}-database-secret
+              key: POSTGRES_PASSWORD
+        volumeMounts:
+        - name: config
+          mountPath: /config
+        - name: data
+          mountPath: /data
+          readOnly: false
+      volumes:
+      - name: config
+        configMap:
+          name: {{ .Values.app.name }}-database-config
+          items:
+          - key: "postgresql.conf"
+            path: "postgresql.conf"
+          - key: "pg_hba.conf"
+            path: "pg_hba.conf"
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      accessModes:
+        - ReadWriteOnce
+      storageClassName: "standard"
+      resources:
+        requests:
+          storage: 200Mi

@@ -3,7 +3,7 @@ package main
 import (
 	"common/internal/config"
 	"common/pkg/sugar"
-	"common/scripts"
+	"common/internal/scripts"
 	"os"
 	"path/filepath"
 )
@@ -14,11 +14,11 @@ func main() {
 		panic(err)
 	}
 
-	scripts.CreateDefaultUsers()
+	// scripts.CreateDefaultUsers()
 	// scripts.FillStocks()
-	//
+
 	// scripts.MakeGoodOrder()
-	//
+
 	// scripts.MakeBadOrderProductNotEnoughStocks()
 	// scripts.MakeBadOrderProductDoesNotExist()
 	// scripts.MakeBadOrderProductPaymentError()

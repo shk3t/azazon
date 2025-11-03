@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
 
+source $(dirname $0)/envs.sh
+
 if [[ " $@ " =~ ( --minikube ) ]]; then
     minikube ssh -- lnav \
-        /tmp/hostpath-provisioner/azazon/{auth,notification,order,payment,stock}-log-pvc/*.log
+        $(printf "/tmp/hostpath-provisioner/azazon/%s-log-pvc/*.log " "${apps[@]}")
 else 
-    lnav {auth,notification,order,payment,stock}/logs/*.log
+    lnav $(printf "%s/logs/*.log " "${apps[@]}")
 fi
 

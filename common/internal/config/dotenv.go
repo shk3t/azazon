@@ -18,22 +18,23 @@ func LoadEnv(workDir string) error {
 		return fmt.Errorf("Error loading .env file:\n\t%w", err)
 	}
 
+	virtualRuntime := sugar.If(
+		os.Getenv("VIRTUAL_RUNTIME") == string(helper.VirtualRuntimes.Kubernetes),
+		helper.VirtualRuntimes.Kubernetes,
+		helper.VirtualRuntimes.Localhost,
+	)
 	externalClusterIp := os.Getenv("EXTERNAL_CLUSTER_IP")
 	externalClusterPort := os.Getenv("EXTERNAL_CLUSTER_PORT")
 
 	Env = envFields{
-		Domain: os.Getenv("DOMAIN"),
-		VirtualRuntime: sugar.If(
-			externalClusterIp != "",
-			helper.VirtualRuntimes.Kubernetes,
-			helper.VirtualRuntimes.Localhost,
-		),
-		KafkaBrokerHosts:   []string{"localhost:" + os.Getenv("KAFKA_PORT")},
+		Domain:             os.Getenv("DOMAIN"),
+		VirtualRuntime:     virtualRuntime,
+		KafkaBrokerHosts:   virtualRuntime.GetKafkaHosts(),
 		KafkaSerialization: os.Getenv("KAFKA_SERIALIZATION"),
 		AdminKey:           os.Getenv("AUTH_ADMIN_KEY"),
 	}
 
-	switch Env.VirtualRuntime {
+	switch virtualRuntime {
 	case helper.VirtualRuntimes.Localhost:
 		Env.GrpcUrls = grpcClientUrls{
 			Auth:  "localhost:" + os.Getenv("AUTH_PORT"),

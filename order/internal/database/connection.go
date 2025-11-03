@@ -18,7 +18,7 @@ func ConnectDatabase(workDir string) error {
 	dbUrl := fmt.Sprintf(
 		"postgres://%s:%s@%s:%d/%s",
 		db.User, db.Password,
-		config.Env.VirtualRuntime.GetDbHosts(config.AppName, helper.OpModes.Write),
+		config.Env.VirtualRuntime.GetDbHosts(config.AppName, helper.OpModes.Write)[0],
 		db.Port, db.Name,
 	)
 
