@@ -49,6 +49,13 @@ func (err ServiceError) Grpc() error {
 	)
 }
 
+func (err *ServiceError) Interface() error {
+	if err == nil {
+		return nil
+	}
+	return err
+}
+
 func NewGrpcError(code int, msg string) error {
 	return (&ServiceError{HttpCode: code, Message: msg}).Grpc()
 }
