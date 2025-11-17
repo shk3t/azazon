@@ -14,10 +14,10 @@ func main() {
 		panic(err)
 	}
 
-	scripts.CreateDefaultUsers()
-	scripts.FillStocks()
-
-	scripts.MakeGoodOrder()
+	// scripts.CreateDefaultUsers()
+	// scripts.FillStocks()
+	//
+	// scripts.MakeGoodOrder()
 
 	scripts.MakeBadOrderProductNotEnoughStocks()
 	scripts.MakeBadOrderProductDoesNotExist()

@@ -6,7 +6,7 @@ source $scriptpath/envs.sh
 
 cat << END
 Before installation:
-1. Follow \"Deploy Strimzi using installation files\" guidelines for Kafka pre-installation: \"https://strimzi.io/quickstarts/\".
+1. Follow "Deploy Strimzi using installation files" guidelines for Kafka pre-installation: "https://strimzi.io/quickstarts/".
 2. Rename \`example.env\`->\`.env\` and fill accordingly.
 END
 

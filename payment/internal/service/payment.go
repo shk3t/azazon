@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"payment/internal/database"
 	"payment/internal/query"
 	"time"
 
@@ -34,7 +35,7 @@ func (s *PaymentService) StartPayment(
 
 	time.Sleep(1 * time.Second)
 
-	err := query.CreateProcessedPayment(ctx, tx, body.OrderId)
+	err := query.New(database.ConnPool).WithTx(tx).CreateProcessedPayment(ctx, int32(body.OrderId))
 	if err != nil {
 		if pgErr, ok := err.(*pgconn.PgError); ok && pgErr.Code == pgerrcode.UniqueViolation {
 			return NewInternalErr(fmt.Errorf("Duplicated order for payment | %w", err))
