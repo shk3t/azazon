@@ -18,7 +18,7 @@ fi
 kubectl apply -f $basepath/common/deployments/namespace.yaml
 kubectl apply -f $basepath/common/deployments/gatewayclass.yaml
 
-bash $scriptpath/gen-proto.sh
+bash $scriptpath/generate.sh
 bash $scriptpath/sync-helm-env.sh
 
 helm uninstall -n $namespace $baseapp --ignore-not-found

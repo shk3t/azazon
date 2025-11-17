@@ -2,28 +2,36 @@ package conversion
 
 import (
 	"auth/internal/model"
+	"auth/internal/query"
 	"common/api/auth"
 	"common/pkg/sugar"
 )
 
-func UserModel[R *auth.RegisterRequest | *auth.LoginRequest | *auth.UpdateUserRequest](
-	r R,
+func UserModel[T *query.User | *auth.RegisterRequest | *auth.LoginRequest | *auth.UpdateUserRequest](
+	in T,
 ) *model.User {
-	switch r := any(r).(type) {
+	switch in := any(in).(type) {
+	case *query.User:
+		return &model.User{
+			Id:           int(in.ID),
+			Login:        in.Login,
+			PasswordHash: in.PasswordHash,
+			Role:         model.UserRole(in.Role),
+		}
 	case *auth.RegisterRequest:
 		return &model.User{
-			Login:    r.Login,
-			Password: r.Password,
+			Login:    in.Login,
+			Password: in.Password,
 		}
 	case *auth.LoginRequest:
 		return &model.User{
-			Login:    r.Login,
-			Password: r.Password,
+			Login:    in.Login,
+			Password: in.Password,
 		}
 	case *auth.UpdateUserRequest:
 		return &model.User{
-			Login:    sugar.Value(r.NewLogin),
-			Password: sugar.Value(r.NewPassword),
+			Login:    sugar.Value(in.NewLogin),
+			Password: sugar.Value(in.NewPassword),
 		}
 	}
 	return nil

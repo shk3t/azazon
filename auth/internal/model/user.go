@@ -4,11 +4,11 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-type userRole string
+type UserRole string
 
 var UserRoles = struct {
-	Admin  userRole
-	Client userRole
+	Admin  UserRole
+	Client UserRole
 }{
 	Admin:  "admin",
 	Client: "client",
@@ -19,7 +19,7 @@ type User struct {
 	Login        string
 	Password     string `db:"-"`
 	PasswordHash string
-	Role         userRole
+	Role         UserRole
 }
 
 type AuthResponse struct {
@@ -29,6 +29,6 @@ type AuthResponse struct {
 type AuthClaims struct {
 	UserId int
 	Login  string
-	Role   userRole
+	Role   UserRole
 	jwt.RegisteredClaims
 }
